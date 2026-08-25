@@ -63,6 +63,10 @@ h1 {
   padding-top:1.25rem; border-top:1px solid var(--rule);
 }
 .byline strong { color:var(--ink-2); font-weight:600; }
+.independence {
+  font-family:var(--sans); font-size:.75rem; line-height:1.55; color:var(--ink-3);
+  margin:1rem 0 0; max-width:60ch; font-style:normal;
+}
 .byline code { font-family:var(--mono); font-size:.75rem; }
 
 /* ---- text ---- */
@@ -193,7 +197,7 @@ footer {
 
 <header class="mast">
   <div class="mast__inner">
-    <p class="eyebrow">Vision Zero &#183; Evaluation note</p>
+    <p class="eyebrow">Independent analysis &#183; NYC open data</p>
     <h1>Did New York's protected bike lanes make cycling safer?</h1>
     <p class="standfirst">Twelve years of city data, and a straight answer about why
       they cannot settle it.</p>
@@ -203,6 +207,10 @@ footer {
       <span>57,353 crashes &#183; 4,357 lane segments &#183; 6.2M counter readings</span>
       <span><code>github.com/KazmirFahrier/nyc-bike-lane-safety</code></span>
     </div>
+    <p class="independence">Independent analysis by a private individual, written on my own
+      initiative using public data. Not affiliated with, commissioned by, endorsed by, or
+      speaking for the New York City Department of Transportation, the Vision Zero program,
+      or any government agency or organization.</p>
   </div>
 </header>
 
@@ -294,7 +302,7 @@ lanes. It is a finding about which year you choose as the point of comparison &#
 treated corridors' injuries peak in exactly the year the first row uses.</p>
 
 <div class="callout callout--warn">
-<p><strong>We should not conclude that protected lanes are ineffective or harmful.</strong>
+<p><strong>None of this is evidence that protected lanes are ineffective or harmful.</strong>
 The honest statement is narrower and more useful: the observational record of NYC's
 protected lane program does not support a credible estimate of its safety effect, and
 any published figure that does not address the targeting problem should be treated with
@@ -310,8 +318,8 @@ a way that is easy to state. Protected lanes go on busy, dangerous corridors. Th
 corridors would have more cyclist injuries than quiet residential streets whether or not
 they had lanes. Comparing them directly measures where the lanes are, not what they do.</p>
 
-<p>We addressed this the standard way: every treated corridor is compared only against
-corridors <strong>in the same borough, with a similar recent injury history</strong>, in
+<p>This analysis addresses it the standard way: every treated corridor is compared only
+against corridors <strong>in the same borough, with a similar recent injury history</strong>, in
 the same years. This is coarsened exact matching, and it works &#8212; before matching,
 Manhattan's treated corridors were running 4.04 pre-period injuries against 2.95 on
 untreated corridors; after matching, 4.04 against 3.93.</p>
@@ -377,8 +385,8 @@ anchor to is not an effect estimate. It is a measurement of the spike.</p>
 
 <div class="wrap">
 
-<p>If protected lanes changed cyclist safety, we would expect a visible break at
-installation &#8212; estimates sitting at one level before and a different level after. They do
+<p>If protected lanes changed cyclist safety, a visible break at installation would be
+expected &#8212; estimates sitting at one level before and a different level after. They do
 not. The post-installation estimates occupy the same range as the pre-installation ones.
 Whatever was happening on these corridors before the lane continued afterward.</p>
 
@@ -535,9 +543,9 @@ distributed evenly across neighborhoods, and whether any safety gains were &#821
 addressed here and remains open.</p>
 
 <footer>
-<p>Independent analysis of public data. Not affiliated with, endorsed by, or produced for
-the New York City Department of Transportation or any city agency. Code, data pipeline and
-full reproduction instructions at
+<p>Independent analysis of public data by a private individual. Not affiliated with,
+endorsed by, or produced for any government agency or organization. Findings and any errors
+are my own. Code, data pipeline and full reproduction instructions at
 <code>github.com/KazmirFahrier/nyc-bike-lane-safety</code>.</p>
 </footer>
 

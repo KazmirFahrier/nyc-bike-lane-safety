@@ -5,6 +5,11 @@
 **Kazmir Fahrier** · August 2026
 Analysis of 57,353 cyclist-injury crashes, 4,357 protected lane segments, and 6.2 million ridership counter readings, 2013–2024. All data public. Code and full reproduction at `github.com/KazmirFahrier/nyc-bike-lane-safety`.
 
+*Independent analysis by a private individual, written on my own initiative using public
+data. Not affiliated with, commissioned by, endorsed by, or speaking for the New York City
+Department of Transportation, the Vision Zero program, or any government agency or
+organization.*
+
 ---
 
 ## The short version
@@ -27,7 +32,7 @@ The consequence is concrete. Three defensible analytic choices give three differ
 
 None of these is statistically distinguishable from no change. More importantly, the difference between the first row and the other two is not a finding about bike lanes. It is a finding about which year you choose as the point of comparison — and treated corridors' injuries peak in exactly the year the first row uses.
 
-**We should not conclude that protected lanes are ineffective or harmful.** The honest statement is narrower and more useful: *the observational record of NYC's protected lane program does not support a credible estimate of its safety effect, and any published figure that does not address the targeting problem should be treated with suspicion — including figures that flatter the program.*
+**None of this is evidence that protected lanes are ineffective or harmful.** The honest statement is narrower and more useful: *the observational record of NYC's protected lane program does not support a credible estimate of its safety effect, and any published figure that does not address the targeting problem should be treated with suspicion — including figures that flatter the program.*
 
 What the data do support is set out below, along with what it would take to answer the question properly.
 
@@ -37,7 +42,7 @@ What the data do support is set out below, along with what it would take to answ
 
 The intuitive comparison — injuries on lanes versus injuries elsewhere — is wrong in a way that is easy to state. Protected lanes go on busy, dangerous corridors. Those corridors would have more cyclist injuries than quiet residential streets whether or not they had lanes. Comparing them directly measures where the lanes are, not what they do.
 
-We addressed this the standard way: every treated corridor is compared only against corridors **in the same borough, with a similar recent injury history**, in the same years. This is coarsened exact matching, and it works — before matching, Manhattan's treated corridors were running 4.04 pre-period injuries against 2.95 on untreated corridors; after matching, 4.04 against 3.93.
+This analysis addresses it the standard way: every treated corridor is compared only against corridors **in the same borough, with a similar recent injury history**, in the same years. This is coarsened exact matching, and it works — before matching, Manhattan's treated corridors were running 4.04 pre-period injuries against 2.95 on untreated corridors; after matching, 4.04 against 3.93.
 
 Matching also revealed something that a citywide average conceals. **Selection runs in opposite directions in different boroughs.** In Manhattan, DOT put lanes on corridors more dangerous than average. In the Bronx, it put them on corridors *safer* than average (1.17 versus 1.72 pre-period injuries). A single citywide comparison nets these against each other and appears unbiased while being wrong in both boroughs.
 
@@ -63,7 +68,7 @@ An effect estimate that flips direction depending on which pre-treatment year yo
 
 ![Callaway–Sant'Anna group-time average treatment effects by years since installation, with 95% confidence intervals from a 1,000-replication corridor-level block bootstrap. The year before installation is the reference and is therefore not plotted.](../../analysis/output/event_study.png)
 
-The chart above makes the same point differently. If protected lanes changed cyclist safety, we would expect a visible break at installation — estimates sitting at one level before and a different level after. They do not. The post-installation estimates occupy the same range as the pre-installation ones. Whatever was happening on these corridors before the lane continued afterward.
+The chart above makes the same point differently. If protected lanes changed cyclist safety, a visible break at installation would be expected — estimates sitting at one level before and a different level after. They do not. The post-installation estimates occupy the same range as the pre-installation ones. Whatever was happening on these corridors before the lane continued afterward.
 
 ### Conditioning choices move the answer more than the treatment does
 
@@ -136,3 +141,9 @@ This analysis cannot say whether protected lanes are effective. It establishes t
 It also cannot speak to: whether lanes caused ridership to rise (which would mean the per-rider safety gain is understated here); unreported crashes, since NYPD records only what is reported; near-misses, comfort, or whether people feel safe enough to ride; or the effect of any particular corridor's lane, since all estimates are averages.
 
 The equity question this analysis set out to answer — whether protected lanes were distributed evenly across neighborhoods, and whether any safety gains were — is not addressed here and remains open.
+
+---
+
+*Independent analysis of public data by a private individual. Not affiliated with,
+endorsed by, or produced for any government agency or organization. Findings and any
+errors are my own.*

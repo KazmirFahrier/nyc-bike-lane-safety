@@ -11,6 +11,11 @@ geometry, DOT automated bicycle counters, and ACS demographics.
 > verification and the policy brief are done. Maps, dashboard, and the equity
 > stratification are not. See [Roadmap](#roadmap).
 
+> Independent analysis by a private individual, written on my own initiative using public
+> data. Not affiliated with, commissioned by, endorsed by, or speaking for the New York City
+> Department of Transportation, the Vision Zero program, or any government agency or
+> organization. Findings and any errors are my own.
+
 ## The finding
 
 **The question cannot be answered with this data, and the reason is the finding.**
