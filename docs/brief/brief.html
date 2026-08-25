@@ -27,20 +27,20 @@ vertical-align: middle;
 </style>
   <style type="text/css">@page {
 size: letter;
-margin: 22mm 20mm 20mm 20mm;
+margin: 18mm 19mm 16mm 19mm;
 @bottom-center {
 content: counter(page) " of " counter(pages);
 font-family: "Georgia", serif; font-size: 8.5pt; color: #777;
 }
 }
 @page :first { margin-top: 18mm; @bottom-center { content: ""; } }
-html { font-size: 10.5pt; }
+html { font-size: 10pt; }
 body {
 font-family: "Georgia", "Times New Roman", serif;
-line-height: 1.5; color: #1a1a1a; hyphens: auto; text-align: justify;
+line-height: 1.42; color: #1a1a1a; hyphens: auto; text-align: justify;
 }
 h1 {
-font-size: 21pt; line-height: 1.18; margin: 0 0 2mm 0;
+font-size: 20pt; line-height: 1.18; margin: 0 0 2mm 0;
 font-weight: 600; letter-spacing: -0.2pt; text-align: left;
 }
 h3 {
@@ -49,16 +49,16 @@ margin: 0 0 5mm 0; text-align: left;
 }
 h1 + h3 { border-bottom: 1.5pt solid #0b5394; padding-bottom: 4mm; }
 h2 {
-font-size: 13.5pt; font-weight: 600; color: #0b5394;
-margin: 9mm 0 3mm 0; text-align: left; page-break-after: avoid;
+font-size: 13pt; font-weight: 600; color: #0b5394;
+margin: 6.5mm 0 2.5mm 0; text-align: left; page-break-after: avoid;
 }
 h3:not(h1 + h3) {
 font-size: 11pt; font-weight: 600; font-style: normal; color: #1a1a1a;
 margin: 6mm 0 2mm 0; page-break-after: avoid;
 }
-p { margin: 0 0 3mm 0; orphans: 3; widows: 3; }
+p { margin: 0 0 2.6mm 0; orphans: 3; widows: 3; }
 strong { font-weight: 600; }
-hr { border: none; border-top: 0.5pt solid #ccc; margin: 7mm 0; }
+hr { border: none; border-top: 0.5pt solid #ccc; margin: 5mm 0; }
 table {
 width: 100%; border-collapse: collapse; margin: 4mm 0 5mm 0;
 font-size: 9.5pt; page-break-inside: avoid;
@@ -71,12 +71,12 @@ td { padding: 1.8mm 3mm 1.8mm 0; border-bottom: 0.4pt solid #e0e0e0; }
 td:last-child, th:last-child { text-align: right; padding-right: 0; }
 ul { margin: 2mm 0 4mm 0; padding-left: 5mm; }
 li { margin-bottom: 2mm; text-align: justify; }
-img { width: 100%; margin: 4mm 0 1.5mm 0; page-break-inside: avoid; }
+img { width: 87%; display: block; margin: 3mm auto 1.5mm auto; page-break-inside: avoid; }
 
 img + em, p > img + em { display: block; }
 figcaption, .caption {
-font-size: 8.5pt; color: #666; font-style: italic;
-text-align: left; margin-bottom: 5mm;
+font-size: 8pt; color: #666; font-style: italic; line-height: 1.35;
+text-align: left; margin: 0 auto 4mm auto; width: 87%;
 }
 code { font-family: "SF Mono", Menlo, monospace; font-size: 9pt; background: #f4f4f4; padding: 0 1pt; }
 </style>
@@ -349,12 +349,13 @@ incidental-parameters problem that affects negative binomial with
 thousands of fixed effects.</p>
 <p><strong>Verification.</strong> The group-time estimator was
 implemented twice — once in Python, once written independently in R from
-the estimator’s definition — and the two agree to 4×10⁻¹⁶ across all 99
-group-time cells. The corridor construction was likewise built twice, in
-DuckDB and in PostGIS, producing an identical partition of all 20,439
-segments. The data pipeline carries 39 automated tests, including an
-end-to-end check that no cyclist injury is created or lost between the
-raw crash records and the analysis panel.</p>
+the estimator’s definition — and the two agree to within one part in a
+quadrillion across all 99 group-time cells. The corridor construction
+was likewise built twice, in DuckDB and in PostGIS, producing an
+identical partition of all 20,439 segments. The data pipeline carries 39
+automated tests, including an end-to-end check that no cyclist injury is
+created or lost between the raw crash records and the analysis
+panel.</p>
 <p><strong>Reproduction.</strong> Every data pull records the source’s
 own row count, the exact filter, and the count landed; a pull that does
 not reconcile fails rather than writing a short file.
