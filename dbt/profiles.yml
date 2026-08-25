@@ -1,0 +1,10 @@
+nycbike:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # One file, versioned out of git, rebuilt from parquet by `dbt build`.
+      path: ../data/nycbike.duckdb
+      threads: 4
+      extensions:
+        - spatial

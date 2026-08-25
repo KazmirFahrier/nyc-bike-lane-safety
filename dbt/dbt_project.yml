@@ -1,0 +1,37 @@
+name: nycbike
+version: "0.1.0"
+config-version: 2
+profile: nycbike
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  nycbike:
+    staging:
+      +materialized: table
+      +schema: staging
+    intermediate:
+      +materialized: table
+    marts:
+      +materialized: table
+
+vars:
+  study_start: "2013-01-01"
+  study_end: "2024-12-31"
+  study_start_year: 2013
+  study_end_year: 2024
+  # Crashes whose treatment status is contested by the spatial join are
+  # excluded from the primary panel. D9 flips this to test sensitivity.
+  include_contested_crashes: false
+  # The counter network does not exist before 2014: 2013 has 262 usable
+  # site-days citywide and no site clears 50 days.
+  exposure_start_year: 2014
+  # Cycling is strongly seasonal; a site covering only summer overstates its year.
+  min_days_per_site_year: 300
+  # Same location instrumented twice under two ids. Keep the "Comprehensive"
+  # record, drop the duplicate, or the busiest crossings count twice.
+  duplicate_counter_ids: ["100047029", "300020241"]

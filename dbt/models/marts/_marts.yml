@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: fct_segment_year_panel
+    description: >
+      One row per street segment per panel year. The analysis dataset for the
+      staggered difference-in-differences.
+    columns:
+      - name: segmentid
+        description: NYC LION street centerline identifier.
+        tests: [not_null]
+      - name: panel_year
+        tests:
+          - not_null
+          - accepted_values:
+              values: [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+              quote: false
+      - name: is_treated
+        description: An on-street protected lane was in force during this year.
+        tests: [not_null]
+      - name: treatment_cohort
+        tests:
+          - not_null
+          - accepted_values:
+              values: [never_treated, always_treated, treated_after_window, switcher]
+      - name: cyclist_injured
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: cyclist_killed
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [segmentid, panel_year]
+
+  - name: int_segment_treatment
+    columns:
+      - name: segmentid
+        tests: [not_null]
+      - name: panel_year
+        tests: [not_null]
+
+  - name: int_exposure_index
+    columns:
+      - name: panel_year
+        tests: [not_null, unique]
+      - name: ridership_index
+        tests: [not_null]
+      - name: sites_in_link
+        description: >
+          Sites common to this year and the prior one, i.e. the width of this
+          chain link. Null in the base year, which has no prior year to link to.
+      - name: link_growth
+        description: Year-over-year ridership growth on the common sites. Null in the base year.

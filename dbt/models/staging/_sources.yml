@@ -1,0 +1,33 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Parquet landed by the Python ingest, each with a receipt.json recording the
+      server's own row count and the exact filter used. Nothing here is cleaned --
+      the raw layer is a faithful copy of what the API served, so that any
+      discrepancy with the source is visible rather than absorbed.
+    meta:
+      external_location: "../data/{schema}/{name}.parquet"
+    schema: raw
+    tables:
+      - name: crashes_cyclist
+        description: NYPD crashes 2013-2024 with >=1 cyclist injured or killed.
+      - name: bike_routes
+        description: DOT bike route segments, all vintages, geometry as WKT.
+      - name: bike_counts_daily
+        description: Automated counter readings aggregated to site x day x status.
+      - name: bike_counters
+        description: The 41 counter sites with coordinates.
+
+  - name: interim
+    meta:
+      external_location: "../data/{schema}/{name}.parquet"
+    schema: interim
+    tables:
+      - name: crashes_segments
+        description: >
+          Crashes joined to their assigned street segment, carrying
+          assignment_method and assignment_contested from the spatial join.
+      - name: spatial_join_qa
+        description: One row of counts describing what the spatial join did.
