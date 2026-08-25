@@ -41,7 +41,9 @@ echo "--- dbt deps ---"
 # Ordering matters and is not obvious: the corridor build reads
 # int_segment_treatment and writes the parquet fct_corridor_year_panel reads.
 echo "--- dbt stage 1 (staging + treatment history) ---"
-( cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt run --select staging+ int_segment_treatment )
+# +model selects ancestors; model+ selects descendants. Using the latter here
+# pulls in fct_corridor_year_panel, which cannot build until corridors has run.
+( cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt run --select +int_segment_treatment )
 
 echo "--- corridors ---"
 .venv/bin/python -m nycbike.corridors

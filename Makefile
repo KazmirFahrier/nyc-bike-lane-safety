@@ -24,8 +24,12 @@ spatial:  ## assign crashes to street segments
 dbt-deps:  ## install dbt packages (dbt_utils) -- required on a fresh checkout
 	cd dbt && DBT_PROFILES_DIR=. ../$(VENV)/dbt deps
 
-dbt-stage: dbt-deps  ## build only what the corridor step needs (staging + treatment history)
-	cd dbt && DBT_PROFILES_DIR=. ../$(VENV)/dbt run --select staging+ int_segment_treatment
+# `+int_segment_treatment` selects that model and its ANCESTORS. The obvious
+# `staging+` selects staging and its DESCENDANTS, which pulls in
+# fct_corridor_year_panel -- the very model that cannot build until the corridor
+# step has run. The trailing-plus/leading-plus distinction is the whole fix.
+dbt-stage: dbt-deps  ## build only what the corridor step needs (treatment history + its ancestors)
+	cd dbt && DBT_PROFILES_DIR=. ../$(VENV)/dbt run --select +int_segment_treatment
 
 corridors:  ## group segments into corridors (DuckDB/graph build) -- needs dbt-stage
 	$(VENV)/python -m nycbike.corridors
