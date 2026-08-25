@@ -1,0 +1,46 @@
+# Data — never commit raw or derived data. The pipeline reproduces it.
+data/raw/*
+data/interim/*
+data/external/*
+!data/**/.gitkeep
+*.duckdb
+*.duckdb.wal
+*.parquet
+*.geojson
+*.shp
+*.gpkg
+
+# Secrets
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+.user.yml
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# Quarto
+docs/brief/*_files/
+docs/brief/.quarto/
+
+# Logs (keep the reconciliation logs, drop the noise)
+logs/*.log
+
+# macOS
+.DS_Store

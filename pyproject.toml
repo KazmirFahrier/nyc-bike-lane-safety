@@ -1,0 +1,43 @@
+[project]
+name = "nycbike"
+version = "0.1.0"
+description = "Protected bike lanes and cyclist injuries in New York City"
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.1",
+    "pandas>=2.2",
+    "pyarrow>=17",
+    "requests>=2.32",
+    "python-dotenv>=1.0",
+    "tenacity>=9.0",
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "pyproj>=3.6",
+    "statsmodels>=0.14",
+    "scipy>=1.14",
+    "matplotlib>=3.9",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = [
+    "dbt-core>=1.8",
+    "dbt-duckdb>=1.8",
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "jupyterlab>=4.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nycbike"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
