@@ -20,6 +20,8 @@ with versions as (
         is_treated_facility,
         is_protected,
         is_onstreet,
+        ft_facility,
+        tf_facility,
         has_suspect_install_date,
         install_date                                                as valid_from,
         lead(install_date) over (
@@ -89,13 +91,27 @@ treatment as (
         end)::boolean                                               as is_treated,
 
         min(case when s.is_treated_facility then s.valid_from end)  as first_protected_date,
+
+        -- What bike facility, if any, was in force on this segment in this
+        -- year. Matching conditions on this: a street that already had a
+        -- conventional lane is a far better counterfactual for a street that
+        -- got a protected one than a street DOT never striped at all.
+        arg_max(coalesce(s.ft_facility, s.tf_facility), s.valid_from) filter (
+            where s.valid_from <= make_date(sy.panel_year, 12, 31)
+              and s.valid_to   >  make_date(sy.panel_year, 1, 1)
+        )                                                           as facility_in_force,
         max(case when s.end_date_unknown and s.is_treated_facility
                  then 1 else 0 end)::boolean                        as has_undated_removal,
         max(case when s.has_dated_removal then 1 else 0 end)::boolean as has_dated_removal,
         max(case when s.has_suspect_install_date and s.is_treated_facility
                  then 1 else 0 end)::boolean                        as has_suspect_install_date,
-        max(case when s.is_protected and not s.is_onstreet
-                 then 1 else 0 end)::boolean                        as is_offstreet_path
+        -- A segment is off-street if no version of it was ever in the roadbed:
+        -- greenways, boardwalks, park paths, sidewalk routes. These are neither
+        -- treatment nor control -- they are not streets, they carry no adjacent
+        -- motor traffic, and their riders are a different population. The
+        -- earlier version of this flag only caught off-street *protected*
+        -- paths, leaving 1,296 boardwalks and park paths in the control pool.
+        bool_and(not s.is_onstreet)                                 as is_offstreet_path
 
     from segment_years sy
     left join spans s on s.segmentid = sy.segmentid

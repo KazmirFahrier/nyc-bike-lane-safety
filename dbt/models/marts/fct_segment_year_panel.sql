@@ -42,6 +42,7 @@ select
     t.is_treated,
     t.treatment_cohort,
     t.first_protected_year,
+    t.facility_in_force,
     t.years_since_treatment,
 
     coalesce(c.crash_count, 0)        as crash_count,

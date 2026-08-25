@@ -58,3 +58,26 @@ models:
           chain link. Null in the base year, which has no prior year to link to.
       - name: link_growth
         description: Year-over-year ridership growth on the common sites. Null in the base year.
+
+  - name: fct_corridor_year_panel
+    description: >
+      The primary analysis panel. One row per corridor per year, where a
+      corridor is a contiguous run of same-street, same-treatment segments.
+    columns:
+      - name: corridor_id
+        tests: [not_null]
+      - name: panel_year
+        tests: [not_null]
+      - name: is_treated
+        tests: [not_null]
+      - name: n_segments
+        tests:
+          - not_null
+          - dbt_utils.accepted_range: {min_value: 1, inclusive: true}
+      - name: cyclist_injured
+        tests:
+          - not_null
+          - dbt_utils.accepted_range: {min_value: 0, inclusive: true}
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [corridor_id, panel_year]

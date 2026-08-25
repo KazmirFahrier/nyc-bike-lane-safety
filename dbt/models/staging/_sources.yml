@@ -31,3 +31,9 @@ sources:
           assignment_method and assignment_contested from the spatial join.
       - name: spatial_join_qa
         description: One row of counts describing what the spatial join did.
+      - name: segment_corridors
+        description: >
+          Maps each on-street segment to its corridor: a maximal contiguous run
+          of segments on the same street, in the same borough, sharing the same
+          treatment history. Built by connected components over endpoint
+          adjacency in nycbike.corridors.
