@@ -39,6 +39,7 @@ Usage:
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -52,7 +53,11 @@ sys.path.insert(0, str(ROOT / "src"))
 from nycbike import config  # noqa: E402
 from nycbike.logging_setup import setup  # noqa: E402
 
-N_BOOT = 1000
+# 1,000 replications for published numbers. Override for a fast smoke run:
+#   NYCBIKE_N_BOOT=50 python analysis/did.py
+# The clean-room reproduction uses a low value to check that the pipeline runs,
+# not to reproduce the confidence intervals.
+N_BOOT = int(os.environ.get("NYCBIKE_N_BOOT", "1000"))
 RNG_SEED = 20260824  # fixed so the numbers in the brief are reproducible
 EVENT_WINDOW = (-5, 5)
 
