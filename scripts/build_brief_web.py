@@ -571,5 +571,16 @@ full reproduction instructions at
 </main>
 """
 
-OUT.write_text(HTML)
-print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size/1024:,.0f} KB)")
+# Escape every non-ASCII character to a numeric entity.
+#
+# The page is published as a bare fragment that a host wraps in its own
+# <head>, so this file cannot declare its own charset -- and served without
+# one, a browser falls back to Latin-1 and renders every em dash as "a€"" and
+# every middot as "A·". Entities render identically under any encoding, so the
+# document stops depending on a declaration it is not allowed to make.
+ascii_html = HTML.encode("ascii", "xmlcharrefreplace").decode("ascii")
+
+OUT.write_text(ascii_html, encoding="ascii")
+n_escaped = sum(1 for a, b in zip(HTML, HTML) if ord(a) > 127)
+print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size/1024:,.0f} KB, "
+      f"{n_escaped} non-ASCII characters escaped)")

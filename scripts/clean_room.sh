@@ -31,16 +31,23 @@ echo "--- ingest (re-pulls from the live APIs) ---"
 echo "--- spatial join ---"
 .venv/bin/python -m nycbike.spatial_join
 
+# Each dbt call runs in a subshell, so a failure cannot leave us in dbt/ with
+# every later relative path silently wrong -- and so `set -e` sees a single
+# failing command rather than a non-final member of an && list, which it is
+# specified to ignore. Both of those cost a clean-room run to learn.
+echo "--- dbt deps ---"
+( cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt deps )
+
 # Ordering matters and is not obvious: the corridor build reads
 # int_segment_treatment and writes the parquet fct_corridor_year_panel reads.
 echo "--- dbt stage 1 (staging + treatment history) ---"
-cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt run --select staging+ int_segment_treatment && cd ..
+( cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt run --select staging+ int_segment_treatment )
 
 echo "--- corridors ---"
 .venv/bin/python -m nycbike.corridors
 
 echo "--- dbt stage 2, full build (all tests must pass) ---"
-cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt build && cd ..
+( cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt build )
 
 echo "--- analysis ---"
 NYCBIKE_N_BOOT=50 .venv/bin/python analysis/did.py
