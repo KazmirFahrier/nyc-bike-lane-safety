@@ -68,7 +68,25 @@ def build_corridors() -> gpd.GeoDataFrame:
     routes = routes[routes["geometry_wkt"].notna()].copy()
 
     # One geometry and one treatment history per segmentid.
+    #
+    # This step sits *inside* the dbt DAG rather than before or after it, and
+    # the dependency is genuinely circular at the project level: this module
+    # reads int_segment_treatment, while dbt's fct_corridor_year_panel reads
+    # the parquet this module writes. dbt cannot express a Python step in its
+    # graph, so the Makefile sequences it -- `make dbt-stage` builds staging
+    # and the treatment history, then `make corridors`, then `make dbt` builds
+    # the rest. Deriving treatment history here instead would duplicate the
+    # dbt model and the two would drift.
     import duckdb
+
+    if not config.DUCKDB_PATH.exists():
+        raise SystemExit(
+            f"{config.DUCKDB_PATH.name} does not exist.\n"
+            "nycbike.corridors reads int_segment_treatment, so the staging and "
+            "intermediate models must be built first:\n"
+            "    make dbt-stage && make corridors && make dbt\n"
+            "or simply: make all"
+        )
 
     con = duckdb.connect(str(config.DUCKDB_PATH), read_only=True)
     treat = con.execute("""

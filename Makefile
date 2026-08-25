@@ -1,7 +1,7 @@
 # Reproduce the study end to end. Every target is idempotent.
 VENV := .venv/bin
 
-.PHONY: help setup ingest spatial corridors dbt postgis-up postgis-corridors postgis-down analysis all clean
+.PHONY: help setup ingest spatial dbt-stage corridors dbt postgis-up postgis-corridors postgis-down analysis all clean
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "};{printf "  %-20s %s\n",$$1,$$2}'
@@ -18,10 +18,16 @@ ingest:  ## pull every source, reconciled, with receipts
 spatial:  ## assign crashes to street segments
 	$(VENV)/python -m nycbike.spatial_join
 
-corridors:  ## group segments into corridors (DuckDB/graph build)
+# The corridor build sits inside the dbt DAG: it reads int_segment_treatment
+# and writes the parquet that fct_corridor_year_panel reads. dbt cannot put a
+# Python step in its graph, so the ordering lives here. Run dbt-stage first.
+dbt-stage:  ## build only what the corridor step needs (staging + treatment history)
+	cd dbt && DBT_PROFILES_DIR=. ../$(VENV)/dbt run --select staging+ int_segment_treatment
+
+corridors:  ## group segments into corridors (DuckDB/graph build) -- needs dbt-stage
 	$(VENV)/python -m nycbike.corridors
 
-dbt:  ## build and test the warehouse
+dbt:  ## build and test the whole warehouse -- needs corridors
 	cd dbt && DBT_PROFILES_DIR=. ../$(VENV)/dbt build
 
 postgis-up:  ## start the PostGIS container
@@ -40,7 +46,7 @@ postgis-down:  ## stop and remove the container
 analysis:  ## staggered difference-in-differences
 	$(VENV)/python analysis/did.py
 
-all: ingest spatial corridors dbt analysis  ## the whole pipeline
+all: ingest spatial dbt-stage corridors dbt analysis  ## the whole pipeline, in dependency order
 
 clean:  ## remove derived data, keep raw pulls
 	rm -f data/nycbike.duckdb data/interim/*.parquet

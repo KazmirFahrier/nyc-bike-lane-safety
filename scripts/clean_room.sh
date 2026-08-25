@@ -28,11 +28,18 @@ echo "--- ingest (re-pulls from the live APIs) ---"
 .venv/bin/python -m nycbike.ingest.bike_routes
 .venv/bin/python -m nycbike.ingest.exposure
 
-echo "--- spatial join and corridors ---"
+echo "--- spatial join ---"
 .venv/bin/python -m nycbike.spatial_join
+
+# Ordering matters and is not obvious: the corridor build reads
+# int_segment_treatment and writes the parquet fct_corridor_year_panel reads.
+echo "--- dbt stage 1 (staging + treatment history) ---"
+cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt run --select staging+ int_segment_treatment && cd ..
+
+echo "--- corridors ---"
 .venv/bin/python -m nycbike.corridors
 
-echo "--- dbt build (all tests must pass) ---"
+echo "--- dbt stage 2, full build (all tests must pass) ---"
 cd dbt && DBT_PROFILES_DIR=. ../.venv/bin/dbt build && cd ..
 
 echo "--- analysis ---"
