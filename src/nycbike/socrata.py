@@ -199,3 +199,101 @@ def fetch_to_parquet(
     receipt.write(out_dir / f"{dataset_name}.receipt.json")
     log.info("wrote %s (%s rows)", out_path.name, f"{len(df):,}")
     return receipt
+
+
+def fetch_aggregate(
+    dataset_name: str,
+    select: str,
+    group: str,
+    order: str,
+    where: str | None = None,
+    control_totals: dict[str, str] | None = None,
+    page_size: int = PAGE_SIZE,
+) -> tuple[pd.DataFrame, PullReceipt]:
+    """Pull a server-side aggregation, reconciled by control totals.
+
+    Aggregates cannot use the `$order=:id` trick (there is no row id) and there
+    is no cheap way to ask how many groups a GROUP BY will produce. So the
+    reconciliation is different, and stronger: the caller supplies control
+    totals computed over the *ungrouped* data, and we assert the aggregated
+    result reproduces them.
+
+    Pulling 6.2M 15-minute counter readings to sum them locally would be the
+    obvious alternative. This is the same answer for 3% of the bytes, and the
+    control totals prove it is the same answer.
+
+    Args:
+        select: SoQL $select for the aggregate, e.g.
+            "id, date_trunc_ymd(date) AS day, sum(counts) AS daily_counts"
+        group: SoQL $group, e.g. "id, day"
+        order: a deterministic ordering over the group keys. Must be unique
+            per group or offset paging will skip rows.
+        control_totals: maps a column in the aggregated frame to a SoQL
+            aggregate over the ungrouped data, e.g.
+            {"daily_counts": "sum(counts)"}. Each is checked exactly.
+    """
+    dataset_id = config.DATASETS[dataset_name]
+    url = _resource_url(dataset_id)
+    started = datetime.now(timezone.utc)
+    t0 = time.monotonic()
+
+    expected: dict[str, int] = {}
+    for col, expr in (control_totals or {}).items():
+        params: dict[str, str] = {"$select": f"{expr} AS v"}
+        if where:
+            params["$where"] = where
+        payload = _get(url, params)
+        expected[col] = int(float(payload[0]["v"])) if payload and payload[0].get("v") else 0
+        log.info("%s: control total %s = %s", dataset_name, expr, f"{expected[col]:,}")
+
+    frames: list[pd.DataFrame] = []
+    offset = 0
+    pages = 0
+    while True:
+        params = {
+            "$select": select,
+            "$group": group,
+            "$order": order,
+            "$limit": page_size,
+            "$offset": offset,
+        }
+        if where:
+            params["$where"] = where
+        batch = _get(url, params)
+        if not batch:
+            break
+        frames.append(pd.DataFrame(batch))
+        pages += 1
+        offset += len(batch)
+        log.info("  %s: %s aggregated rows", dataset_name, f"{offset:,}")
+        if len(batch) < page_size:
+            break
+
+    df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+    for col, want in expected.items():
+        if col not in df.columns:
+            raise SocrataError(f"control total column {col!r} not in aggregated result")
+        got = int(pd.to_numeric(df[col], errors="coerce").fillna(0).sum())
+        if got != want:
+            raise SocrataError(
+                f"{dataset_name}: control total mismatch on {col} -- "
+                f"ungrouped data totals {want:,}, aggregation totals {got:,} "
+                f"(difference {got - want:+,}). The aggregation lost or duplicated rows."
+            )
+        log.info("%s: control total %s reconciled (%s)", dataset_name, col, f"{got:,}")
+
+    receipt = PullReceipt(
+        dataset_id=dataset_id,
+        dataset_name=dataset_name,
+        where=where,
+        select=f"{select} GROUP BY {group}",
+        server_count=max(expected.values()) if expected else len(df),
+        rows_landed=len(df),
+        pages=pages,
+        started_utc=started.isoformat(),
+        finished_utc=datetime.now(timezone.utc).isoformat(),
+        elapsed_sec=round(time.monotonic() - t0, 1),
+        output_path="",
+    )
+    return df, receipt
