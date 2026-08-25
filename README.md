@@ -40,7 +40,8 @@ observational record cannot settle the question, and that any published figure w
 does not address the targeting problem deserves suspicion — including figures that
 flatter the program.
 
-📄 **[Read the six-page policy brief](docs/brief/protected-bike-lanes-brief.pdf)**
+📄 **[Read the six-page policy brief](docs/brief/protected-bike-lanes-brief.pdf)** (PDF) ·
+also built as a [web version](docs/brief/brief_web.html)
 
 ![Injuries on treated corridors rose 55% before the lane went in](analysis/output/raw_trends.png)
 
@@ -165,6 +166,12 @@ Three independent checks, because a result nobody can reproduce is a claim, not 
 | Corridor construction built twice — DuckDB graph components, and PostGIS `ST_ClusterDBSCAN` | **identical partition** of all 20,439 segments |
 | dbt test suite | 39 passing, incl. end-to-end injury conservation |
 | Every data pull | reconciled against the source's own `count(*)`; a short pull raises rather than writing |
+| **Clean-room reproduction** — fresh clone, live data re-pulled, `bash scripts/clean_room.sh` | **all five key figures match exactly** |
+
+The clean-room run earned its place: it caught three build failures invisible on the
+development machine — a circular Python/dbt dependency that only worked because the
+database already existed, a missing `dbt deps`, and a `staging+` selector that pulled in
+descendants when it needed ancestors. Each would have met the first person to clone the repo.
 
 ## Roadmap
 
@@ -179,9 +186,9 @@ Three independent checks, because a result nobody can reproduce is a claim, not 
 - [x] Callaway–Sant'Anna DiD + event study + base-period sensitivity
 - [x] Poisson FE specification ladder; R cross-validation
 - [x] Six-page policy brief
+- [x] Clean-room reproduction from a fresh clone
 - [ ] Equity stratification by tract *(blocked: needs a free Census API key)*
 - [ ] QGIS maps and Tableau Public dashboard
-- [ ] Clean-room reproduction
 
 ## License
 
