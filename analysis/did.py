@@ -295,16 +295,26 @@ def main() -> None:
     log.info("  base = early pre-window (e=-5..-2): ATT %+.4f  [%+.4f, %+.4f]",
              overall_alt, lo_alt, hi_alt)
     log.info("  Treated corridors' injury rate rises 55%% across the pre-period,")
-    log.info("  so e=-1 sits near a local peak. If the two answers disagree, the")
-    log.info("  headline is measuring mean reversion, not the lane.")
+    log.info("  so e=-1 sits near a local peak.")
+    if np.sign(overall) != np.sign(overall_alt):
+        log.info("")
+        log.info("  *** THE SIGN FLIPS. *** The two base periods are both defensible")
+        log.info("  and they disagree about the direction of the effect. The headline")
+        log.info("  estimate is therefore not identifying the lane -- it is measuring")
+        log.info("  reversion from the injury spike that caused DOT to install it.")
+        log.info("  Do not report either number as the effect of a protected lane.")
     log.info("")
     log.info("=== PRE-TREND TEST ===")
     log.info("  mean pre-treatment ATT: %+.4f (SE %.4f, 95%% CI [%+.4f, %+.4f])",
              pre_mean, pre_se, pre_ci[0], pre_ci[1])
     log.info("  bootstrap p-value for zero pre-trend: %.3f", joint)
-    log.info("  %s", "pre-trends flat -- parallel trends is credible"
-             if joint > 0.10 else
-             "PRE-TRENDS NOT FLAT -- parallel trends is in doubt")
+    # Failing to reject a flat pre-trend is NOT evidence that the pre-trend is
+    # flat. With four pre-period estimates on a sparse count outcome this test
+    # has very little power, and reporting a non-rejection as "parallel trends
+    # holds" is how underpowered designs get published. What the pre-trend
+    # must be judged against is the effect it is supposed to identify.
+    log.info("  NOTE: this test is underpowered. A non-rejection is not evidence")
+    log.info("        of parallel trends; judge the pre-trend against the effect size.")
     # The comparison that actually matters for a causal reading: an estimated
     # effect no larger than the pre-existing trend is not evidence of an effect.
     log.info("  pre-trend as a share of the post-treatment ATT: %.0f%%",
