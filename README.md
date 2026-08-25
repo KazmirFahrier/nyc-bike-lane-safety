@@ -7,9 +7,42 @@ A staggered difference-in-differences study of 4,357 on-street protected bike la
 segments installed between 2013 and 2024, using NYPD crash records, DOT bike route
 geometry, DOT automated bicycle counters, and ACS demographics.
 
-> **Status: in progress.** Ingestion and the treatment definition are built and
-> reconciled. Models, maps, dashboard, and the policy brief are not finished yet.
-> No findings are claimed on this page until they exist. See [Roadmap](#roadmap).
+> **Status: analysis complete, presentation layer in progress.** Pipeline, models,
+> verification and the policy brief are done. Maps, dashboard, and the equity
+> stratification are not. See [Roadmap](#roadmap).
+
+## The finding
+
+**The question cannot be answered with this data, and the reason is the finding.**
+
+NYC DOT installs protected bike lanes where cyclists are already being hurt.
+Corridors that received one saw their cyclist-injury rate **rise 55% over the five
+years before installation** (0.076 → 0.119 injuries per segment-year) while matched
+comparison corridors stayed flat (0.090 → 0.092).
+
+That is well-targeted policy. It also breaks the standard evaluation method, because
+a problem that has just spiked tends to subside whether or not you intervene. Three
+defensible analytic choices give three answers that do not agree on direction:
+
+| Specification | Estimate | 95% CI |
+|---|---|---|
+| Callaway–Sant'Anna, base = last pre-year | **−17.7%** | −57% to +20% |
+| Callaway–Sant'Anna, base = earlier pre-window | **+8.0%** | −17% to +35% |
+| Poisson FE within corridor, CEM-matched | **+12.1%** | −4% to +31% |
+| *(naive two-way fixed effects, shown for contrast)* | *+21.2%* | — |
+
+None is statistically distinguishable from zero. The gap between row 1 and rows 2–3
+is not a fact about bike lanes — it is a fact about which pre-treatment year you
+anchor to, and treated corridors' injuries peak in exactly the year row 1 uses.
+
+**This is not evidence that protected lanes fail.** It is evidence that the
+observational record cannot settle the question, and that any published figure which
+does not address the targeting problem deserves suspicion — including figures that
+flatter the program.
+
+📄 **[Read the six-page policy brief](docs/brief/protected-bike-lanes-brief.pdf)**
+
+![Injuries on treated corridors rose 55% before the lane went in](analysis/output/raw_trends.png)
 
 ---
 
@@ -122,19 +155,32 @@ docs/                 data dictionary, scope note, policy brief (Quarto)
 tests/                pytest
 ```
 
+## Verification
+
+Three independent checks, because a result nobody can reproduce is a claim, not a finding.
+
+| Check | Result |
+|---|---|
+| Estimator implemented twice — Python, and R written from the definition | agree to 1 part in 10¹⁵ across all 99 group-time cells |
+| Corridor construction built twice — DuckDB graph components, and PostGIS `ST_ClusterDBSCAN` | **identical partition** of all 20,439 segments |
+| dbt test suite | 39 passing, incl. end-to-end injury conservation |
+| Every data pull | reconciled against the source's own `count(*)`; a short pull raises rather than writing |
+
 ## Roadmap
 
-- [x] Project scaffold, config, reconciled Socrata client
-- [x] Crash ingestion (57,353 cyclist-involved records, reconciled)
+- [x] Scaffold, config, reconciled Socrata client
+- [x] Crash ingestion (57,353 cyclist-involved records)
 - [x] Treatment ingestion + protected-lane definition
-- [ ] Exposure and ACS ingestion, data dictionary
-- [ ] PostGIS spatial join: crashes to street corridors
-- [ ] dbt staging/intermediate/marts with tests
-- [ ] Matched comparison corridors
-- [ ] Difference-in-differences + parallel-trends plot
-- [ ] Negative binomial with exposure offset + robustness grid
-- [ ] Equity stratification by tract
-- [ ] Maps, dashboard, six-page policy brief
+- [x] Exposure ingestion + chained ridership index; generated data dictionary
+- [x] Spatial join with tie-breaking and contested-assignment flagging
+- [x] dbt staging → intermediate → marts, 39 tests
+- [x] Corridor aggregation, verified against PostGIS
+- [x] Cohort-specific coarsened exact matching
+- [x] Callaway–Sant'Anna DiD + event study + base-period sensitivity
+- [x] Poisson FE specification ladder; R cross-validation
+- [x] Six-page policy brief
+- [ ] Equity stratification by tract *(blocked: needs a free Census API key)*
+- [ ] QGIS maps and Tableau Public dashboard
 - [ ] Clean-room reproduction
 
 ## License
