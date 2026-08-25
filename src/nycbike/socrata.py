@@ -58,13 +58,18 @@ class PullReceipt:
     dataset_name: str
     where: str | None
     select: str | None
-    server_count: int
+    # Rows the server said matched the filter. None for aggregate pulls, where
+    # there is no cheap way to ask how many groups a GROUP BY will produce --
+    # those reconcile on control_totals instead, and conflating the two would
+    # make a receipt read as though 159M rows went missing.
+    server_count: int | None
     rows_landed: int
     pages: int
     started_utc: str
     finished_utc: str
     elapsed_sec: float
     output_path: str
+    control_totals: dict[str, int] | None = None
 
     def write(self, path: Path) -> None:
         path.write_text(json.dumps(asdict(self), indent=2) + "\n")
@@ -288,7 +293,8 @@ def fetch_aggregate(
         dataset_name=dataset_name,
         where=where,
         select=f"{select} GROUP BY {group}",
-        server_count=max(expected.values()) if expected else len(df),
+        server_count=None,
+        control_totals=expected,
         rows_landed=len(df),
         pages=pages,
         started_utc=started.isoformat(),
