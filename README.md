@@ -45,7 +45,25 @@ observational record cannot settle the question, and that any published figure w
 does not address the targeting problem deserves suspicion — including figures that
 flatter the program.
 
-📄 **[Read the six-page policy brief](docs/brief/protected-bike-lanes-brief.pdf)** (PDF) ·
+## The question the data *can* answer
+
+Whether a lane *worked* needs a counterfactual. Whether a neighborhood *got* one does not —
+distribution is observed. And there the answer is unambiguous:
+
+| | Richest fifth of tracts | Middle fifth |
+|---|---|---|
+| Protected lane miles per 10,000 residents | **0.40** | **0.12** |
+| Tracts containing any protected lane | **47.7%** | **15.2%** |
+
+| | Poorest fifth | Richest fifth | | Most POC | Least POC |
+|---|---|---|---|---|---|
+| Median year the corridor got its lane | **2022** | **2019** | | **2022** | **2019** |
+
+Three years, on a program whose stated purpose is preventing deaths. The gap is a *gap, not
+a gradient* — the poorest fifth is not the worst served (0.17); the middle fifth is. That
+nuance is in the brief.
+
+📄 **[Read the eight-page policy brief](docs/brief/protected-bike-lanes-brief.pdf)** (PDF) ·
 also built as a [web version](docs/brief/brief_web.html)
 
 ![Injuries on treated corridors rose 55% before the lane went in](analysis/output/raw_trends.png)
@@ -192,7 +210,7 @@ descendants when it needed ancestors. Each would have met the first person to cl
 - [x] Poisson FE specification ladder; R cross-validation
 - [x] Six-page policy brief
 - [x] Clean-room reproduction from a fresh clone
-- [ ] Equity stratification by tract *(blocked: needs a free Census API key)*
+- [x] Equity stratification by census tract (ACS via Census FTP summary files — no API key)
 - [ ] QGIS maps and Tableau Public dashboard
 
 ## License

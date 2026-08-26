@@ -155,6 +155,91 @@ def spec_ladder() -> None:
     print("wrote spec_ladder.png")
 
 
+def equity() -> None:
+    """Two panels: how much protected lane each group has, and when they got it.
+
+    Per-resident rather than network-conditioned, because conditioning on the
+    existing bike network hides neighborhoods the network never reached.
+    """
+    import numpy as np
+    tr = pd.read_csv(OUT / "equity_tracts.csv")
+    cor = pd.read_csv(OUT / "equity_corridors.csv")
+
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.4))
+
+    panels = [
+        ("income_q", "Median household income", ["Q1\nlowest", "Q2", "Q3", "Q4", "Q5\nhighest"]),
+        ("poc_q", "Share people of color", ["Q1\nleast", "Q2", "Q3", "Q4", "Q5\nmost"]),
+    ]
+    for ax, (key, title, ticks) in zip(axes, panels):
+        _style(ax)
+        g = tr.groupby(key, observed=True).agg(
+            pop=("pop_total", "sum"), ft=("protected_ft", "sum"))
+        g = g.reindex([c for c in tr[key].dropna().unique().tolist()
+                       if c in g.index]) if False else g.sort_index()
+        mi_per_10k = 10_000 * (g["ft"] / 5280.0) / g["pop"]
+
+        # Color by rank so the disparity reads without needing the axis.
+        vals = mi_per_10k.to_numpy()
+        norm = (vals - vals.min()) / (vals.max() - vals.min() + 1e-9)
+        colors = [plt.cm.Blues(0.35 + 0.5 * n) for n in norm]
+        ax.bar(range(len(vals)), vals, color=colors, edgecolor=ACCENT, linewidth=.7)
+        for i, v in enumerate(vals):
+            ax.text(i, v, f"{v:.2f}", ha="center", va="bottom", fontsize=8.5, color=INK)
+        ax.set_xticks(range(len(vals)))
+        ax.set_xticklabels(ticks, fontsize=8.5)
+        ax.set_title(title, fontsize=10.5, color=INK, loc="left", pad=8)
+        ax.set_ylim(0, vals.max() * 1.22)
+        ax.set_ylabel("Protected lane miles\nper 10,000 residents", fontsize=9)
+
+    # Not "richer and whiter" as a clean gradient -- neither panel is monotone.
+    # On income the *middle* quintile is worst served, not the poorest; on POC
+    # share the fourth quintile is worst, not the fifth. What is true, and
+    # what the title says, is the spread.
+    fig.suptitle("Protected lane miles per resident vary threefold across neighborhoods",
+                 fontsize=12.5, color=INK, x=0.055, ha="left", y=0.985)
+    fig.text(0.055, 0.925,
+             "Richest fifth of tracts: 0.40 mi per 10,000 residents. Middle fifth: 0.12. "
+             "The pattern is a gap, not a gradient.",
+             fontsize=9, color="#555555", ha="left")
+    fig.tight_layout(rect=[0, 0, 1, 0.90])
+    fig.savefig(OUT / "equity.png", dpi=180)
+    print("wrote equity.png")
+
+    # --- timing ---
+    # Two panels rather than two series on shared rows. On one series Q1 means
+    # lowest income; on the other it means *least* people of color -- opposite
+    # ends of their distributions. Plotting them against shared row labels put
+    # 2022 and 2019 on a row called "Q1" and invited exactly the wrong reading.
+    sw = cor[cor["treatment_cohort"] == "switcher"]
+    fig2, axes2 = plt.subplots(1, 2, figsize=(10.5, 3.5), sharex=True)
+    specs = [
+        ("income_q", ACCENT, "By median household income",
+         ["Q1 lowest", "Q2", "Q3", "Q4", "Q5 highest"]),
+        ("poc_q", WARN, "By share people of color",
+         ["Q1 least", "Q2", "Q3", "Q4", "Q5 most"]),
+    ]
+    for ax, (key, c, title, ticks) in zip(axes2, specs):
+        _style(ax)
+        med = sw.groupby(key, observed=True)["first_protected_year"].median().sort_index()
+        ax.barh(range(len(med)), med - 2013, left=2013, height=.55,
+                color=c, alpha=.85)
+        for i, v in enumerate(med):
+            ax.text(v + .1, i, f"{int(v)}", va="center", fontsize=9, color=INK)
+        ax.set_yticks(range(len(med)))
+        ax.set_yticklabels(ticks, fontsize=8.5)
+        ax.invert_yaxis()
+        ax.set_xlim(2013, 2024.5)
+        ax.set_title(title, fontsize=10, color=INK, loc="left", pad=8)
+        ax.set_xlabel("Median year the corridor got its lane", fontsize=9)
+
+    fig2.suptitle("The poorest and the most-POC corridors were treated last",
+                  fontsize=12.5, color=INK, x=0.055, ha="left", y=0.99)
+    fig2.tight_layout(rect=[0, 0, 1, 0.90])
+    fig2.savefig(OUT / "equity_timing.png", dpi=180)
+    print("wrote equity_timing.png")
+
+
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
     raw_trends()
@@ -163,3 +248,7 @@ if __name__ == "__main__":
         event_study()
     except FileNotFoundError:
         print("event_study.csv not present yet -- run analysis/did.py")
+    try:
+        equity()
+    except FileNotFoundError:
+        print("equity_*.csv not present yet -- run analysis/equity.py")

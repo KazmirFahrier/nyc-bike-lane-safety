@@ -473,6 +473,80 @@ counters overstates the two busiest cycling crossings in the city.</li>
 
 <hr>
 
+<h2>Who got the lanes</h2>
+
+<p>The safety question needs a counterfactual the data cannot supply. The distribution
+question does not &mdash; who received a lane is observed. It is also the question a health
+department asks, and it has a clear answer.</p>
+
+<p>Corridors are matched to census tracts by length-weighted overlay: a corridor crossing
+three tracts counts toward each in proportion to the length inside it. Assigning each
+corridor to one tract by its midpoint would misattribute exactly the long avenues that tend
+to receive protected lanes. Demographics are 2018&ndash;2022 American Community Survey
+5-year estimates across all 2,327 NYC tracts.</p>
+
+</div>
+
+<div class="wide">
+<figure>
+  <img src="{img('equity.png')}" alt="Protected lane miles per 10,000 residents by tract quintile, for median household income and share people of color. The richest fifth has 0.40 miles per 10,000 residents against 0.12 in the middle fifth.">
+  <figcaption>Protected lane miles per 10,000 residents, by tract quintile. All 2,327 NYC
+    census tracts with non-zero population. Sources: NYC DOT Bike Routes, ACS 2018&ndash;2022
+    5-year estimates.</figcaption>
+</figure>
+</div>
+
+<div class="wrap">
+
+<p><strong>Measured per resident, provision varies more than threefold.</strong> The richest
+fifth of tracts has 0.40 protected lane miles per 10,000 residents; the middle fifth has
+0.12. Nearly half of tracts in the richest fifth (47.7%) contain some protected lane,
+against 15.2% in the middle fifth.</p>
+
+<p><strong>The pattern is a gap, not a gradient, and that matters for how it is read.</strong>
+The poorest fifth is <em>not</em> the worst served &mdash; it has 0.17 miles per 10,000,
+above the middle fifth. Much of that reflects dense, low-income tracts close to Manhattan,
+which sit inside the core network for reasons of geography rather than of equity. The clean
+statement is that the top quintile is far better served than everyone else, not that
+provision declines steadily as income falls. The same holds by race: the fourth quintile of
+people-of-color share is the worst served (0.11), not the fifth (0.16).</p>
+
+<p><strong>Conditioning on the existing network narrows the gap but does not close it.</strong>
+Among corridors that already carried some bike facility, 34.3% of those in the richest tracts
+were upgraded to protected, against 19.3% in the second-poorest. By race, 33.7% of corridors
+in the second-least-POC quintile were upgraded against 20.4% in the fourth. That comparison
+holds constant the fact that DOT had already identified the street as a cycling route &mdash;
+so the disparity is not only about where the network reaches, but about which parts of it
+were upgraded.</p>
+
+</div>
+
+<div class="wide">
+<figure>
+  <img src="{img('equity_timing.png')}" alt="Median year of protected lane installation by tract quintile. Corridors in the poorest and most-people-of-color tracts were treated in 2022 at the median; those in the richest and least-POC tracts in 2019.">
+  <figcaption>Median year of installation for the 472 corridors treated during the study
+    window, by tract quintile. Shown as two panels because Q1 means &ldquo;lowest income&rdquo;
+    on one measure and &ldquo;least people of color&rdquo; on the other.</figcaption>
+</figure>
+</div>
+
+<div class="wrap">
+
+<div class="callout callout--warn">
+<p><strong>The timing gap is the cleanest result in this analysis.</strong> Corridors in the
+poorest fifth of tracts got their protected lanes in 2022 at the median; those in the richest
+fifth, in 2019. By share of people of color the gap is identical &mdash; 2022 against 2019.
+Three years, on a program whose stated purpose is preventing deaths.</p>
+</div>
+
+<p>Two cautions. This is an <em>ecological</em> comparison: tract characteristics describe the
+neighborhood a corridor runs through, not the people who ride it, and cyclists on a corridor
+may live elsewhere. And per-resident provision counts residents near a lane, not riders. Neither
+caution reaches the timing result, which compares corridors to corridors and does not depend on
+a denominator.</p>
+
+<hr>
+
 <h2>What would actually answer the question</h2>
 
 <p>The obstacle is not data volume. It is that installation timing is driven by the outcome
@@ -509,8 +583,10 @@ recorded as a matter of course.</p>
 <p><strong>Data.</strong> NYPD Motor Vehicle Collisions (<code>h9gi-nx95</code>), 57,353
 crashes involving a cyclist injury or fatality, 2013–2024. NYC DOT Bike Routes
 (<code>mzxg-pwib</code>), 29,695 segment records. DOT automated bicycle counters
-(<code>uczf-rk3c</code>), 6.2 million 15-minute readings across 41 sites. All public, all
-free.</p>
+(<code>uczf-rk3c</code>), 6.2 million 15-minute readings across 41 sites. American Community
+Survey 2018&ndash;2022 5-year estimates for all 2,327 NYC census tracts, with TIGER tract
+geometry &mdash; taken from the Census Bureau's public summary files, which need no API key
+or account. All public, all free.</p>
 
 <p><strong>Unit of analysis.</strong> Corridors, not blocks: maximal contiguous runs of
 same-street, same-borough segments sharing one treatment history. DOT installs lanes on

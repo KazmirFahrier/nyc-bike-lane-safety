@@ -17,9 +17,20 @@ dependencies = [
     "scipy>=1.14",
     "matplotlib>=3.9",
     "tqdm>=4.66",
+    # Poisson/negative-binomial with high-dimensional fixed effects and
+    # cluster-robust SEs. statsmodels cannot do this at 2,000+ fixed effects.
+    "pyfixest>=0.25",
 ]
 
 [project.optional-dependencies]
+# Rendering the policy brief. Kept separate because WeasyPrint needs native
+# Pango/cairo (`brew install pango gdk-pixbuf` on macOS) and the analysis
+# itself does not depend on it.
+brief = [
+    "weasyprint>=62",
+    "pypdf>=5.0",
+]
+
 dev = [
     "dbt-core>=1.8",
     "dbt-duckdb>=1.8",

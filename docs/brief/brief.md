@@ -34,7 +34,14 @@ None of these is statistically distinguishable from no change. More importantly,
 
 **None of this is evidence that protected lanes are ineffective or harmful.** The honest statement is narrower and more useful: *the observational record of NYC's protected lane program does not support a credible estimate of its safety effect, and any published figure that does not address the targeting problem should be treated with suspicion — including figures that flatter the program.*
 
-What the data do support is set out below, along with what it would take to answer the question properly.
+**One question the data *can* settle is who got the lanes.** Distribution is observed, not
+inferred, so it needs no counterfactual. The answer is a clear disparity: the richest fifth
+of census tracts has **3.4 times** the protected lane mileage per resident of the middle
+fifth, and the corridors in the poorest and the most-people-of-color neighborhoods were
+treated a median of **three years later** than those in the richest and whitest.
+
+What the data support is set out below, along with what it would take to answer the safety
+question properly.
 
 ---
 
@@ -104,6 +111,57 @@ Three findings are solid, do not depend on the contested causal question, and ar
 
 ---
 
+## Who got the lanes
+
+The safety question needs a counterfactual the data cannot supply. The distribution
+question does not — who received a lane is observed. It is also the question a health
+department asks, and it has a clear answer.
+
+Corridors are matched to census tracts by length-weighted overlay: a corridor crossing
+three tracts counts toward each in proportion to the length inside it. Assigning each
+corridor to one tract by its midpoint would misattribute exactly the long avenues that
+tend to receive protected lanes. Demographics are 2018–2022 American Community Survey
+5-year estimates across all 2,327 NYC tracts.
+
+![Protected lane miles per 10,000 residents by tract quintile, for median household income and share people of color. The richest fifth has 0.40 miles per 10,000 residents against 0.12 in the middle fifth.](../../analysis/output/equity.png)
+
+**Measured per resident, provision varies more than threefold.** The richest fifth of
+tracts has 0.40 protected lane miles per 10,000 residents; the middle fifth has 0.12.
+Nearly half of tracts in the richest fifth (47.7%) contain some protected lane, against
+15.2% in the middle fifth.
+
+**The pattern is a gap, not a gradient, and that matters for how it is read.** The poorest
+fifth is *not* the worst served — it has 0.17 miles per 10,000, above the middle fifth.
+Much of that reflects dense, low-income tracts close to Manhattan, which sit inside the
+core network for reasons of geography rather than of equity. The clean statement is that
+the top quintile is far better served than everyone else, not that provision declines
+steadily as income falls. The same holds by race: the fourth quintile of
+people-of-color share is the worst served (0.11), not the fifth (0.16).
+
+**Conditioning on the existing network narrows the gap but does not close it.** Among
+corridors that already carried some bike facility, 34.3% of those in the richest tracts
+were upgraded to protected, against 19.3% in the second-poorest. By race, 33.7% of
+corridors in the second-least-POC quintile were upgraded against 20.4% in the fourth.
+That comparison holds constant the fact that DOT had already identified the street as a
+cycling route — so the disparity is not only about where the network reaches, but about
+which parts of it were upgraded.
+
+![Median year of protected lane installation by tract quintile. Corridors in the poorest and most-people-of-color tracts were treated in 2022 at the median; those in the richest and least-POC tracts in 2019.](../../analysis/output/equity_timing.png)
+
+**The timing gap is the cleanest result in this analysis.** Corridors in the poorest fifth
+of tracts got their protected lanes in 2022 at the median; those in the richest fifth, in
+2019. By share of people of color the gap is identical — 2022 against 2019. Three years,
+on a program whose stated purpose is preventing deaths.
+
+Two cautions. This is an *ecological* comparison: tract characteristics describe the
+neighborhood a corridor runs through, not the people who ride it, and cyclists on a
+corridor may live elsewhere. And per-resident provision counts residents near a lane, not
+riders — a corridor serving a commuting route may be well used by people no tract-level
+count captures. Neither caution reaches the timing result, which compares corridors to
+corridors and does not depend on a denominator.
+
+---
+
 ## What would actually answer the question
 
 The obstacle is not data volume. It is that installation timing is driven by the outcome being measured. Four routes past it, in rough order of cost:
@@ -120,7 +178,7 @@ The obstacle is not data volume. It is that installation timing is driven by the
 
 ## How this was done
 
-**Data.** NYPD Motor Vehicle Collisions (`h9gi-nx95`), 57,353 crashes involving a cyclist injury or fatality, 2013–2024. DOT Bike Routes (`mzxg-pwib`), 29,695 segment records. DOT automated bicycle counters (`uczf-rk3c`), 6.2 million 15-minute readings across 41 sites. All public, all free.
+**Data.** NYPD Motor Vehicle Collisions (`h9gi-nx95`), 57,353 crashes involving a cyclist injury or fatality, 2013–2024. DOT Bike Routes (`mzxg-pwib`), 29,695 segment records. DOT automated bicycle counters (`uczf-rk3c`), 6.2 million 15-minute readings across 41 sites. American Community Survey 2018–2022 5-year estimates for all 2,327 NYC census tracts, with TIGER tract geometry — taken from the Census Bureau's public summary files, which need no API key or account. All public, all free.
 
 **Unit of analysis.** Corridors, not blocks: maximal contiguous runs of same-street, same-borough segments sharing one treatment history. DOT installs lanes on corridors rather than blocks, and 92.5% of individual segment-years contain zero cyclist injuries, which is too sparse to model. Aggregation gives 2,234 corridors and reduces zero-outcome observations to 68.4%.
 
@@ -140,7 +198,11 @@ This analysis cannot say whether protected lanes are effective. It establishes t
 
 It also cannot speak to: whether lanes caused ridership to rise (which would mean the per-rider safety gain is understated here); unreported crashes, since NYPD records only what is reported; near-misses, comfort, or whether people feel safe enough to ride; or the effect of any particular corridor's lane, since all estimates are averages.
 
-The equity question this analysis set out to answer — whether protected lanes were distributed evenly across neighborhoods, and whether any safety gains were — is not addressed here and remains open.
+On equity, the distribution question is answered above; the second half of it is not.
+Whether any safety *gains* were shared evenly cannot be established, for the same reason
+the citywide safety effect cannot: there is no credible estimate of the effect to
+distribute. The disparity documented here is in who received the treatment and when, which
+stands on its own.
 
 ---
 

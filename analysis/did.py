@@ -256,9 +256,9 @@ def main() -> None:
     ev["ci_hi"] = ev["event_time"].map(boot_events.quantile(0.975))
 
     # --- the pre-trend test, which is what makes or breaks the design -----
-    # The bootstrap distribution is centred on the observed statistic, so
+    # The bootstrap distribution is centered on the observed statistic, so
     # comparing |bootstrap| against |observed| returns ~0.5 whatever the data
-    # say. The test has to be built on the *recentred* distribution: how often
+    # say. The test has to be built on the *recentered* distribution: how often
     # does a draw fall as far from the observed value as zero does.
     pre = ev[ev["event_time"] < 0]
     pre_boot = boot_events[[c for c in boot_events.columns if c < 0]]
@@ -266,8 +266,8 @@ def main() -> None:
     pre_draws = pre_boot.mean(axis=1).to_numpy(dtype=float)
     pre_draws = pre_draws[~np.isnan(pre_draws)]
     pre_se = float(np.std(pre_draws, ddof=1))
-    centred = pre_draws - pre_draws.mean()
-    joint = float(np.mean(np.abs(centred) >= abs(pre_mean)))
+    centered = pre_draws - pre_draws.mean()
+    joint = float(np.mean(np.abs(centered) >= abs(pre_mean)))
     pre_ci = np.percentile(pre_draws, [2.5, 97.5])
 
     out = ROOT / "analysis" / "output"
