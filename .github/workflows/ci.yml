@@ -1,0 +1,63 @@
+name: CI
+
+# Fast checks only. The expensive end-to-end reproduction --
+# scripts/clean_room.sh, which re-pulls ~28M rows from the live Socrata and
+# Census APIs and rebuilds the whole warehouse -- is deliberately NOT run here.
+# It depends on third-party services being up and on data that legitimately
+# drifts as NYC backfills crash records, so it belongs in a manual run rather
+# than on every push, where it would fail for reasons unrelated to the commit.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install the project
+        run: uv sync --extra dev || uv pip install --system -e ".[dev]"
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Unit tests
+        run: uv run pytest tests/ -q
+
+      # Validates the dbt DAG, every ref()/source(), and all Jinja -- including
+      # the coarsened_exact_matching macro shared by the corridor and segment
+      # panels. Needs no data, so a broken model reference fails here rather
+      # than 20 minutes into a pipeline run.
+      - name: Validate the dbt project
+        working-directory: dbt
+        env:
+          DBT_PROFILES_DIR: .
+        run: |
+          uv run dbt deps
+          uv run dbt parse
+
+      - name: Check the brief and dashboard builders import cleanly
+        run: |
+          uv run python -c "import ast,sys; [ast.parse(open(f).read()) for f in \
+            ['scripts/build_brief.py','scripts/build_brief_web.py', \
+             'scripts/build_dashboard.py','scripts/export_dashboard_data.py', \
+             'analysis/did.py','analysis/equity.py','analysis/maps.py', \
+             'analysis/figures.py','analysis/count_models.py']]"

@@ -60,6 +60,18 @@ def main() -> None:
     out.write_text(html, encoding="ascii")
     print(f"wrote {out.relative_to(ROOT)} ({out.stat().st_size/1024:,.0f} KB)")
 
+    # GitHub Pages serves from docs/, so anything the landing page shows has to
+    # live under docs/ too -- ../analysis/output/ is outside the published site
+    # and 404s. Copied by the build rather than by hand so the site cannot show
+    # a figure the pipeline has since regenerated.
+    assets = ROOT / "docs" / "assets"
+    assets.mkdir(exist_ok=True)
+    for name in ("equity.png", "map_buildout.png", "raw_trends.png"):
+        src = ROOT / "analysis" / "output" / name
+        if src.exists():
+            (assets / name).write_bytes(src.read_bytes())
+    print(f"refreshed {len(list(assets.glob('*.png')))} site assets")
+
 
 if __name__ == "__main__":
     main()

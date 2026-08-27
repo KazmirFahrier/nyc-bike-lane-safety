@@ -42,10 +42,23 @@ from shapely import wkt
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from nycbike import config  # noqa: E402
-from nycbike.logging_setup import setup  # noqa: E402
+from nycbike import config
+from nycbike.logging_setup import setup
 
 FT_PER_MILE = 5280.0
+
+
+def wavg(g: pd.DataFrame, col: str, weight_col: str = "len_ft") -> float:
+    """Length-weighted mean of `col`, ignoring rows with a missing value.
+
+    A corridor crossing three tracts takes each tract's characteristics in
+    proportion to the length inside it. Assigning the corridor to one tract by
+    its midpoint would misattribute exactly the long avenues that tend to
+    receive protected lanes -- which is the whole population of interest.
+    """
+    v, w = g[col], g[weight_col]
+    m = v.notna() & (w > 0)
+    return float(np.average(v[m], weights=w[m])) if m.any() else float("nan")
 
 
 def corridor_geometries(log) -> gpd.GeoDataFrame:
@@ -96,11 +109,6 @@ def main() -> None:
     log.info("corridor-tract overlay pieces: %s", f"{len(ov):,}")
 
     # --- corridor-level demographics, weighted by length in each tract ----
-    def wavg(g: pd.DataFrame, col: str) -> float:
-        v, w = g[col], g["len_ft"]
-        m = v.notna() & (w > 0)
-        return float(np.average(v[m], weights=w[m])) if m.any() else np.nan
-
     cor = ov.groupby("corridor_id").apply(
         lambda g: pd.Series({
             "length_ft": g["len_ft"].sum(),

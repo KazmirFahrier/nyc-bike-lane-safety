@@ -665,6 +665,6 @@ are my own. Code, data pipeline and full reproduction instructions at
 ascii_html = HTML.encode("ascii", "xmlcharrefreplace").decode("ascii")
 
 OUT.write_text(ascii_html, encoding="ascii")
-n_escaped = sum(1 for a, b in zip(HTML, HTML) if ord(a) > 127)
+n_escaped = sum(1 for c in HTML if ord(c) > 127)
 print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size/1024:,.0f} KB, "
       f"{n_escaped} non-ASCII characters escaped)")

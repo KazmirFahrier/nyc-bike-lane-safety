@@ -26,19 +26,20 @@ from pathlib import Path
 import duckdb
 import geopandas as gpd
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap  # noqa: E402
-from matplotlib.lines import Line2D  # noqa: E402
-from shapely import wkt  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
+from matplotlib.lines import Line2D
+from shapely import wkt
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from nycbike import config  # noqa: E402
-from nycbike.logging_setup import setup  # noqa: E402
+from nycbike import config
+from nycbike.logging_setup import setup
 
 OUT = ROOT / "analysis" / "output"
 LAND = "#eceef1"
@@ -127,8 +128,8 @@ def map_buildout(boros, all_routes, segs, log) -> None:
             linewidth=1.9, zorder=3)
 
     labels = ["2013-15", "2016-17", "2018-19", "2020-21", "2022-24"]
-    handles = [Line2D([], [], color=cmap(norm(b + 0.5)), lw=3, label=l)
-               for b, l in zip(bounds[:-1], labels)]
+    handles = [Line2D([], [], color=cmap(norm(b + 0.5)), lw=3, label=lbl)
+               for b, lbl in zip(bounds[:-1], labels, strict=True)]
     handles.append(Line2D([], [], color=CONTEXT, lw=1.2, label="other bike route"))
     ax.legend(handles=handles, loc="upper left", frameon=False, fontsize=9,
               title="Protected lane installed", title_fontsize=9,
@@ -152,7 +153,7 @@ def map_injuries(boros, all_routes, segs, log) -> None:
     # Quantile bins: the distribution is heavily right-skewed, and equal-interval
     # bins would put 90% of corridors in the lowest class and say nothing.
     qs = d["inj_per_seg_year"].quantile([0.5, 0.75, 0.9, 0.97]).to_list()
-    bounds = [0] + qs + [d["inj_per_seg_year"].max()]
+    bounds = [0, *qs, d["inj_per_seg_year"].max()]
     cmap = LinearSegmentedColormap.from_list(
         "inj", ["#dfe3e8", "#fdd0a2", "#fd8d3c", "#e6550d", "#a63603"])
     norm = BoundaryNorm(bounds, cmap.N)
@@ -162,7 +163,7 @@ def map_injuries(boros, all_routes, segs, log) -> None:
 
     labels = ["below median", "50th-75th", "75th-90th", "90th-97th", "top 3%"]
     handles = [Line2D([], [], color=cmap(norm((bounds[i] + bounds[i+1]) / 2)),
-                      lw=1 + i * 0.6, label=l) for i, l in enumerate(labels)]
+                      lw=1 + i * 0.6, label=lbl) for i, lbl in enumerate(labels)]
     ax.legend(handles=handles, loc="upper left", frameon=False, fontsize=9,
               title="Cyclist injuries per segment-year", title_fontsize=9,
               alignment="left", bbox_to_anchor=(0.0, LEGEND_Y))

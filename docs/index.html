@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Did NYC's Protected Bike Lanes Work? — Kazmir Fahrier</title>
+<meta name="description" content="An independent analysis of 57,353 cyclist-injury crashes, NYC DOT bike infrastructure, ridership counters and Census demographics — and why the safety question cannot be cleanly answered.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f7f8fa;--surface:#fff;--surface-2:#eef1f5;
+  --ink:#12161c;--ink-2:#4a5460;--ink-3:#78838f;
+  --rule:#dfe3e8;--rule-2:#c3cad3;
+  --accent:#0b5394;--accent-soft:#e8eef6;--warn:#b45309;
+  --serif:"Newsreader",Georgia,serif;
+  --sans:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ground:#0f131a;--surface:#161c25;--surface-2:#1c2430;
+  --ink:#e9edf2;--ink-2:#a4afbb;--ink-3:#7d8794;
+  --rule:#262e39;--rule-2:#39434f;
+  --accent:#6ea9e6;--accent-soft:#152538;--warn:#dda23f;
+}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);
+     font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:60rem;margin:0 auto;padding:0 1.5rem 5rem}
+.eyebrow{font-family:var(--sans);font-size:.6875rem;font-weight:600;letter-spacing:.14em;
+         text-transform:uppercase;color:var(--accent);margin:3.5rem 0 1rem}
+h1{font-weight:600;font-size:clamp(2rem,5vw,3.1rem);line-height:1.08;letter-spacing:-.02em;
+   margin:0 0 .8rem;text-wrap:balance;max-width:20ch}
+.stand{font-size:1.2rem;color:var(--ink-2);font-style:italic;margin:0 0 1.5rem;max-width:52ch}
+.byline{font-family:var(--sans);font-size:.85rem;color:var(--ink-3);
+        padding:1.1rem 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+        display:flex;flex-wrap:wrap;gap:.4rem 1.4rem}
+.byline strong{color:var(--ink-2);font-weight:600}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;
+       margin:2.2rem 0 2.8rem}
+a.card{display:flex;flex-direction:column;gap:.4rem;text-decoration:none;color:inherit;
+       background:var(--surface);border:1px solid var(--rule);border-radius:10px;
+       padding:1.3rem 1.4rem;transition:border-color .15s,transform .15s}
+a.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card__k{font-family:var(--sans);font-size:.65rem;font-weight:700;letter-spacing:.12em;
+         text-transform:uppercase;color:var(--accent)}
+.card__t{font-family:var(--sans);font-weight:600;font-size:1.02rem}
+.card__d{font-size:.9rem;color:var(--ink-3);line-height:1.45;font-family:var(--sans)}
+
+h2{font-size:1.45rem;font-weight:600;margin:2.8rem 0 .7rem;letter-spacing:-.01em}
+p{margin:0 0 1.05rem;max-width:66ch}
+strong{font-weight:600}
+.finding{background:var(--surface);border-left:3px solid var(--warn);padding:1.15rem 1.4rem;
+         border-radius:0 6px 6px 0;margin:1.6rem 0}
+.finding p:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin:1.2rem 0 1.6rem;
+      font-family:var(--sans)}
+th{text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+   color:var(--ink-3);padding:0 1rem .55rem 0;border-bottom:1px solid var(--rule-2)}
+td{padding:.62rem 1rem .62rem 0;border-bottom:1px solid var(--rule)}
+td:last-child,th:last-child{text-align:right;padding-right:0;
+   font-family:var(--mono);font-variant-numeric:tabular-nums}
+figure{margin:2rem 0}
+figure img{width:100%;height:auto;border:1px solid var(--rule);border-radius:8px;display:block}
+figcaption{font-family:var(--sans);font-size:.76rem;color:var(--ink-3);margin-top:.6rem}
+.stack{font-family:var(--sans);font-size:.85rem;color:var(--ink-2);display:flex;
+       flex-wrap:wrap;gap:.45rem;margin:1rem 0 0;padding:0;list-style:none}
+.stack li{background:var(--surface-2);border:1px solid var(--rule);border-radius:5px;
+          padding:.3rem .6rem}
+footer{margin-top:3.5rem;padding-top:1.4rem;border-top:1px solid var(--rule);
+       font-family:var(--sans);font-size:.78rem;color:var(--ink-3);line-height:1.6}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="eyebrow">Independent analysis · NYC open data</p>
+<h1>Did New York's protected bike lanes make cycling safer?</h1>
+<p class="stand">Twelve years of city data, and a straight answer about why they cannot
+settle it.</p>
+<div class="byline">
+  <span><strong>Kazmir Fahrier</strong></span>
+  <span>August 2026</span>
+  <span>57,353 crashes · 4,357 lane segments · 6.2M counter readings · 2,327 census tracts</span>
+</div>
+
+<div class="cards">
+  <a class="card" href="dashboard/dashboard.html">
+    <span class="card__k">Interactive</span>
+    <span class="card__t">Protected Lane Tracker →</span>
+    <span class="card__d">Five views over 2,234 corridors: the build-out, injuries, equity,
+      and the data caveats behind every figure.</span>
+  </a>
+  <a class="card" href="brief/protected-bike-lanes-brief.pdf">
+    <span class="card__k">PDF · 8 pages</span>
+    <span class="card__t">Policy brief →</span>
+    <span class="card__d">Written for a non-technical policy reader. The finding, the
+      methods, and what would actually answer the question.</span>
+  </a>
+  <a class="card" href="https://github.com/KazmirFahrier/nyc-bike-lane-safety">
+    <span class="card__k">Source</span>
+    <span class="card__t">GitHub repository →</span>
+    <span class="card__d">Python, dbt, DuckDB, PostGIS, R. 40 unit tests, 39 dbt tests,
+      clean-room reproduction.</span>
+  </a>
+</div>
+
+<h2>The finding</h2>
+
+<p>NYC DOT installs protected bike lanes where cyclists are already being hurt. Corridors
+that received one saw their cyclist-injury rate <strong>rise 55% over the five years
+before installation</strong>, while matched comparison corridors stayed flat.</p>
+
+<p>That is well-targeted policy. It also breaks the standard evaluation method, because a
+problem that has just spiked tends to subside whether or not you intervene. Three
+defensible analytic choices give three answers that do not agree on direction:</p>
+
+<table>
+<thead><tr><th>Specification</th><th>Estimate</th></tr></thead>
+<tbody>
+<tr><td>Callaway–Sant'Anna, base = last pre-treatment year</td><td>−17.7%</td></tr>
+<tr><td>Callaway–Sant'Anna, base = earlier pre-window</td><td>+8.0%</td></tr>
+<tr><td>Poisson fixed effects within corridor, CEM-matched</td><td>+12.1%</td></tr>
+</tbody>
+</table>
+
+<div class="finding">
+<p><strong>None is statistically distinguishable from zero, and the disagreement is not
+noise.</strong> It is a fact about which pre-treatment year you anchor to — and treated
+corridors' injuries peak in exactly the year the conventional choice uses. This is not
+evidence the lanes fail; it is evidence the observational record cannot settle the
+question.</p>
+</div>
+
+<h2>The question the data <em>can</em> answer</h2>
+
+<p>Whether a lane <em>worked</em> needs a counterfactual. Whether a neighborhood
+<em>got</em> one does not — distribution is observed.</p>
+
+<figure>
+  <img src="assets/equity.png" alt="Protected lane miles per 10,000 residents by census tract quintile, for median household income and share people of color.">
+  <figcaption>The richest fifth of tracts has 0.40 protected lane miles per 10,000
+    residents; the middle fifth has 0.12. Corridors in the poorest and the
+    most-people-of-color fifths were treated a median of three years later.</figcaption>
+</figure>
+
+<h2>How it was built</h2>
+
+<p>Every data pull is reconciled against the source's own row count and refuses to write a
+short file. The corridor construction is implemented twice — once as graph components in
+DuckDB, once with <code>ST_ClusterDBSCAN</code> in PostGIS — and the two produce an
+identical partition of all 20,439 segments. The estimator is implemented twice, in Python
+and independently in R, agreeing to one part in a quadrillion. A clean-room script clones
+the repo into a fresh environment, re-pulls the live data, rebuilds everything, and
+compares the results against the published figures.</p>
+
+<ul class="stack">
+  <li>Python</li><li>SQL</li><li>dbt</li><li>DuckDB</li><li>PostGIS</li><li>GeoPandas</li>
+  <li>R</li><li>statsmodels</li><li>pyfixest</li><li>Causal inference</li>
+  <li>Reproducible research</li>
+</ul>
+
+<footer>
+<p><strong>Independent analysis by a private individual, using public data.</strong> Not
+affiliated with, commissioned by, endorsed by, or speaking for the New York City Department
+of Transportation, the Vision Zero program, or any government agency or organization.
+Findings and any errors are my own.</p>
+<p>Sources: NYPD Motor Vehicle Collisions (h9gi-nx95), NYC DOT Bike Routes (mzxg-pwib),
+DOT Bicycle Counts (uczf-rk3c), ACS 2018–2022 5-year estimates, TIGER 2022 tracts.</p>
+</footer>
+
+</div>
+</body>
+</html>

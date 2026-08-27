@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from . import config
 
 
 def setup(name: str) -> logging.Logger:
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     logfile = config.LOGS / f"{name}_{stamp}.log"
     fmt = logging.Formatter("%(asctime)s %(levelname)-7s %(name)s | %(message)s")
 

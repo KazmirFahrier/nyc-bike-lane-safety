@@ -50,5 +50,28 @@ packages = ["src/nycbike"]
 line-length = 100
 target-version = "py311"
 
+[tool.ruff.lint]
+# Pinned explicitly so CI and a local run cannot disagree because of a ruff
+# version bump changing the default set.
+select = [
+    "E",      # pycodestyle
+    "F",      # pyflakes
+    "I",      # import sorting
+    "UP",     # pyupgrade
+    "B",      # bugbear -- B023 in particular catches closures over loop variables
+    "SIM",    # simplify
+    "RUF",
+]
+ignore = [
+    "E501",   # line length is handled by the formatter, not worth failing CI over
+]
+
+[tool.ruff.lint.per-file-ignores]
+# analysis/ and scripts/ insert the src path before importing the package, so
+# imports legitimately follow statements.
+"analysis/*.py" = ["E402"]
+"scripts/*.py" = ["E402", "RUF001"]  # the brief builder legitimately contains en dashes in prose
+"tests/*.py" = ["E402", "SIM108"]  # explicit if/else reads better in fixtures
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

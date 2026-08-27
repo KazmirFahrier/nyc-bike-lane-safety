@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import os
 import subprocess
-import sys
 from pathlib import Path
 
 # WeasyPrint reaches Pango/cairo/GObject through cffi, which uses the dynamic

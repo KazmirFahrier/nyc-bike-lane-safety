@@ -45,6 +45,7 @@ import json
 
 import geopandas as gpd
 import pandas as pd
+from shapely.errors import GeometryTypeError
 from shapely.geometry import shape
 
 from .. import config, socrata
@@ -62,7 +63,11 @@ def _to_geometry(val) -> object | None:
             return None
     try:
         return shape(val)
-    except (ValueError, AttributeError, TypeError):
+    except (ValueError, AttributeError, TypeError, GeometryTypeError):
+        # GeometryTypeError is raised for an unrecognised "type" field and does
+        # NOT inherit from TypeError, so it escaped the original handler. One
+        # malformed record would abort the whole 29,695-row ingest instead of
+        # being counted and logged. Found by tests/test_corridors.py.
         return None
 
 

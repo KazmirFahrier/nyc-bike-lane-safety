@@ -50,8 +50,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from nycbike import config  # noqa: E402
-from nycbike.logging_setup import setup  # noqa: E402
+from nycbike import config
+from nycbike.logging_setup import setup
 
 # 1,000 replications for published numbers. Override for a fast smoke run:
 #   NYCBIKE_N_BOOT=50 python analysis/did.py
@@ -122,12 +122,15 @@ def att_gt(panel: pd.DataFrame, matched: pd.DataFrame,
             if ctrl.empty:
                 continue
 
-            def wdiff(units: pd.DataFrame) -> float | None:
-                idx_t = list(zip(units["corridor_id"], [t] * len(units)))
+            def wdiff(units: pd.DataFrame, t=t, base_years=base_years) -> float | None:
+                # t and base_years bound as defaults: the closure is only called
+                # within this iteration, but binding makes that explicit rather
+                # than load-bearing.
+                idx_t = list(zip(units["corridor_id"], [t] * len(units), strict=True))
                 yt = y.reindex(idx_t).to_numpy(dtype=float)
                 # Average the outcome across every year in the base window.
                 bs = [
-                    y.reindex(list(zip(units["corridor_id"], [b] * len(units))))
+                    y.reindex(list(zip(units["corridor_id"], [b] * len(units), strict=True)))
                      .to_numpy(dtype=float)
                     for b in base_years
                 ]
@@ -163,6 +166,23 @@ def aggregate_event_study(gt: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
     return out
+
+
+def bootstrap_pvalue(draws: np.ndarray, observed: float) -> float:
+    """Two-sided bootstrap p-value for `observed` against a null of zero.
+
+    The subtlety that cost a real bug: the bootstrap distribution is centred on
+    the observed statistic, so comparing |draw| against |observed| directly
+    returns ~0.5 whatever the data say. The distribution has to be recentred
+    first -- then the question is how often a draw falls at least as far from
+    the centre as zero does.
+    """
+    draws = np.asarray(draws, dtype=float)
+    draws = draws[~np.isnan(draws)]
+    if draws.size == 0:
+        return float("nan")
+    centred = draws - draws.mean()
+    return float(np.mean(np.abs(centred) >= abs(observed)))
 
 
 def aggregate_overall(gt: pd.DataFrame) -> float:
@@ -275,11 +295,26 @@ def main() -> None:
     gt.to_csv(out / "att_gt.csv", index=False)
     ev.to_csv(out / "event_study.csv", index=False)
 
+
     tw = twfe(panel, matched)
 
     gt_alt = att_gt(panel, matched, BASE_SPECS["early_pre_window"])
     overall_alt = aggregate_overall(gt_alt)
     lo_alt, hi_alt = np.nanpercentile(boot_alt, [2.5, 97.5])
+
+    # Persist the headline numbers rather than only logging them. The dashboard
+    # quotes these, and anything reading them from a log -- or worse, having
+    # them typed in by hand -- goes stale silently the first time the analysis
+    # is re-run. Written here rather than beside the other CSVs above because
+    # every value below has to exist first.
+    pd.DataFrame([
+        {"spec": "cs_did_base_last_pre_year", "att": overall, "ci_lo": lo, "ci_hi": hi, "se": se},
+        {"spec": "cs_did_base_early_window", "att": overall_alt, "ci_lo": lo_alt,
+         "ci_hi": hi_alt, "se": float(np.nanstd(boot_alt, ddof=1))},
+        {"spec": "twfe_naive", "att": tw, "ci_lo": None, "ci_hi": None, "se": None},
+        {"spec": "pretrend_mean", "att": pre_mean, "ci_lo": pre_ci[0],
+         "ci_hi": pre_ci[1], "se": pre_se},
+    ]).to_csv(out / "did_summary.csv", index=False)
 
     log.info("")
     log.info("=== EVENT STUDY (injuries per segment-year) ===")

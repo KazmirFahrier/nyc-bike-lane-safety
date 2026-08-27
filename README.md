@@ -7,9 +7,9 @@ A staggered difference-in-differences study of 4,357 on-street protected bike la
 segments installed between 2013 and 2024, using NYPD crash records, DOT bike route
 geometry, DOT automated bicycle counters, and ACS demographics.
 
-> **Status: analysis complete, presentation layer in progress.** Pipeline, models,
-> verification and the policy brief are done. Maps, dashboard, and the equity
-> stratification are not. See [Roadmap](#roadmap).
+[![CI](https://github.com/KazmirFahrier/nyc-bike-lane-safety/actions/workflows/ci.yml/badge.svg)](https://github.com/KazmirFahrier/nyc-bike-lane-safety/actions/workflows/ci.yml)
+
+**▶ [Interactive dashboard and policy brief](https://kazmirfahrier.github.io/nyc-bike-lane-safety/)**
 
 > Independent analysis by a private individual, written on my own initiative using public
 > data. Not affiliated with, commissioned by, endorsed by, or speaking for the New York City
@@ -91,8 +91,16 @@ So this study asks three things:
 
 ## Method
 
-Staggered-adoption difference-in-differences on a segment-by-year panel, with a
-negative binomial outcome model carrying a ridership-exposure offset.
+Staggered-adoption difference-in-differences (Callaway–Sant'Anna group-time ATTs) on a
+corridor-by-year panel with cohort-specific coarsened exact matching, supplemented by
+corridor-and-year fixed-effect Poisson count models carrying a ridership-exposure offset.
+
+Poisson pseudo-maximum-likelihood rather than negative binomial for the fixed-effects
+specifications: it stays consistent for the conditional mean under the overdispersion
+present here (variance/mean 6.5) without the incidental-parameters problem that afflicts
+negative binomial with thousands of fixed effects. A pooled negative binomial is reported
+alongside them, but explicitly as a **cross-sectional association** — it measures where
+lanes are, not what they do — and never as a treatment effect.
 
 **Identifying assumption, stated up front:** absent the lane, injury trends on treated
 corridors would have moved parallel to matched control corridors. This is an
@@ -174,22 +182,25 @@ data changed and we can say by exactly how much.
 ```
 src/nycbike/          ingestion, config, Socrata client with reconciliation
   ingest/             one module per source
-dbt/                  staging -> intermediate -> marts, with tests
-sql/                  PostGIS spatial join
-analysis/             DiD, negative binomial, R script
-docs/                 data dictionary, scope note, policy brief (Quarto)
-tests/                pytest
+dbt/                  staging -> intermediate -> marts, 39 data tests
+sql/postgis/          corridor build, verified against the DuckDB one
+analysis/             DiD, count models, equity, figures, maps, R cross-validation
+scripts/              clean-room reproduction, brief and dashboard builders
+docs/                 data dictionary, GIS notes, policy brief, dashboard, site
+tests/                40 pytest unit tests (ingest, corridors, estimator, equity)
+.github/workflows/    CI: ruff, pytest, dbt parse
 ```
 
 ## Verification
 
-Three independent checks, because a result nobody can reproduce is a claim, not a finding.
+Independent checks at every level, because a result nobody can reproduce is a claim, not a finding.
 
 | Check | Result |
 |---|---|
 | Estimator implemented twice — Python, and R written from the definition | agree to 1 part in 10¹⁵ across all 99 group-time cells |
 | Corridor construction built twice — DuckDB graph components, and PostGIS `ST_ClusterDBSCAN` | **identical partition** of all 20,439 segments |
-| dbt test suite | 39 passing, incl. end-to-end injury conservation |
+| dbt data tests | 39 passing, incl. end-to-end injury conservation |
+| Python unit tests | 40 passing — reconciliation, corridor topology, estimator arithmetic, weighting |
 | Every data pull | reconciled against the source's own `count(*)`; a short pull raises rather than writing |
 | **Clean-room reproduction** — fresh clone, live data re-pulled, `bash scripts/clean_room.sh` | **all five key figures match exactly** |
 
@@ -210,7 +221,7 @@ descendants when it needed ancestors. Each would have met the first person to cl
 - [x] Cohort-specific coarsened exact matching
 - [x] Callaway–Sant'Anna DiD + event study + base-period sensitivity
 - [x] Poisson FE specification ladder; R cross-validation
-- [x] Six-page policy brief
+- [x] Eight-page policy brief
 - [x] Clean-room reproduction from a fresh clone
 - [x] Equity stratification by census tract (ACS via Census FTP summary files — no API key)
 - [x] Three maps, built by the pipeline so they regenerate with the data

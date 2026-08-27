@@ -53,8 +53,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from nycbike import config  # noqa: E402
-from nycbike.logging_setup import setup  # noqa: E402
+from nycbike import config
+from nycbike.logging_setup import setup
 
 
 def load() -> pd.DataFrame:
@@ -127,7 +127,8 @@ def main() -> None:
         offset="offset_term",
         vcov={"CRV1": "corridor_id"},
     )
-    c3 = float(m3.coef().iloc[0]); s3 = float(m3.se().iloc[0])
+    c3 = float(m3.coef().iloc[0])
+    s3 = float(m3.se().iloc[0])
     report(log, "treated_now (within corridor)", c3, s3, int(m3._N))
     log.info("")
 
@@ -139,7 +140,8 @@ def main() -> None:
         data=dm, offset="offset_term", vcov={"CRV1": "corridor_id"},
         weights="cem_weight",
     )
-    c4 = float(m4.coef().iloc[0]); s4 = float(m4.se().iloc[0])
+    c4 = float(m4.coef().iloc[0])
+    s4 = float(m4.se().iloc[0])
     report(log, "treated_now (matched, within corridor)", c4, s4, int(m4._N))
     log.info("")
 

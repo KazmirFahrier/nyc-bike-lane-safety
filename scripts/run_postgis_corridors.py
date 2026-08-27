@@ -23,8 +23,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from nycbike import config  # noqa: E402
-from nycbike.logging_setup import setup  # noqa: E402
+from nycbike import config
+from nycbike.logging_setup import setup
 
 CONTAINER = "nycbike-postgis"
 PSQL = ["docker", "exec", "-i", CONTAINER, "psql", "-U", "nycbike", "-d", "nycbike"]

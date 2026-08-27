@@ -61,6 +61,35 @@ def _endpoints(geom):
     return coords[0], coords[-1]
 
 
+def components_within_tolerance(geoms: gpd.GeoSeries, tolerance: float = ENDPOINT_TOLERANCE_FT):
+    """Label connected components over an endpoint-adjacency graph.
+
+    Two geometries are adjacent when an endpoint of one lies within `tolerance`
+    of an endpoint of the other; components are the transitive closure of that.
+    Split out from build_corridors so the graph logic can be tested on
+    hand-built geometry without a database.
+
+    Returns an integer label per input geometry, in input order.
+    """
+    n = len(geoms)
+    if n == 0:
+        return np.empty(0, dtype=int)
+    if n == 1:
+        return np.zeros(1, dtype=int)
+
+    ends = geoms.map(_endpoints)
+    pts = np.array([p for e in ends for p in (e if e else ((np.nan, np.nan),) * 2)])
+    owner = np.repeat(np.arange(n), 2)
+
+    tree = gpd.GeoSeries(gpd.points_from_xy(pts[:, 0], pts[:, 1]), crs=geoms.crs)
+    near = tree.sindex.query(tree.buffer(tolerance), predicate="intersects")
+    a, b = owner[near[0]], owner[near[1]]
+    keep = a != b
+    adj = coo_matrix((np.ones(keep.sum()), (a[keep], b[keep])), shape=(n, n))
+    _, labels = connected_components(adj, directed=False)
+    return labels
+
+
 def build_corridors() -> gpd.GeoDataFrame:
     log = setup("corridors")
 
@@ -126,21 +155,7 @@ def build_corridors() -> gpd.GeoDataFrame:
             n_groups += 1
             continue
 
-        ends = sub.geometry.map(_endpoints)
-        pts = np.array([p for e in ends for p in (e if e else ((np.nan, np.nan),) * 2)])
-        owner = np.repeat(np.arange(n), 2)
-
-        # Endpoint pairs closer than the tolerance make their segments adjacent.
-        tree = gpd.GeoSeries(gpd.points_from_xy(pts[:, 0], pts[:, 1]), crs=sub.crs)
-        near = tree.sindex.query(
-            tree.buffer(ENDPOINT_TOLERANCE_FT), predicate="intersects"
-        )
-        a, b = owner[near[0]], owner[near[1]]
-        keep = a != b
-        adj = coo_matrix(
-            (np.ones(keep.sum()), (a[keep], b[keep])), shape=(n, n)
-        )
-        _, labels = connected_components(adj, directed=False)
+        labels = components_within_tolerance(sub.geometry)
         corridor_ids[gdf.index.get_indexer(idx)] = [f"{key}|{lb}" for lb in labels]
         n_groups += 1
 

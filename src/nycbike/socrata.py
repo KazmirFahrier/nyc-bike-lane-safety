@@ -20,8 +20,8 @@ from __future__ import annotations
 import json
 import logging
 import time
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -135,7 +135,7 @@ def fetch(
     """
     dataset_id = config.DATASETS[dataset_name]
     url = _resource_url(dataset_id)
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     t0 = time.monotonic()
 
     expected = count_rows(dataset_id, where)
@@ -163,7 +163,7 @@ def fetch(
         log.info("  %s: %s / %s rows", dataset_name, f"{offset:,}", f"{expected:,}")
 
     df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-    finished = datetime.now(timezone.utc)
+    finished = datetime.now(UTC)
 
     if len(df) != expected:
         raise SocrataError(
@@ -239,7 +239,7 @@ def fetch_aggregate(
     """
     dataset_id = config.DATASETS[dataset_name]
     url = _resource_url(dataset_id)
-    started = datetime.now(timezone.utc)
+    started = datetime.now(UTC)
     t0 = time.monotonic()
 
     expected: dict[str, int] = {}
@@ -298,7 +298,7 @@ def fetch_aggregate(
         rows_landed=len(df),
         pages=pages,
         started_utc=started.isoformat(),
-        finished_utc=datetime.now(timezone.utc).isoformat(),
+        finished_utc=datetime.now(UTC).isoformat(),
         elapsed_sec=round(time.monotonic() - t0, 1),
         output_path="",
     )

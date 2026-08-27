@@ -14,7 +14,7 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from nycbike import config  # noqa: E402
+from nycbike import config
 
 QUALITY_TABLE = """## Known data-quality issues
 
@@ -73,7 +73,7 @@ def main() -> None:
         w(f"`{fq}` — {n:,} rows\n")
         w("| Column | Type |")
         w("|---|---|")
-        cols = con.execute(f"""
+        cols = con.execute("""
             select column_name, data_type from information_schema.columns
             where table_schema = ? and table_name = ? order by ordinal_position
         """, [schema, name]).fetchall()

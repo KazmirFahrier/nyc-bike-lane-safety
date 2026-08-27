@@ -19,9 +19,10 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import pandas as pd  # noqa: E402
+import matplotlib.pyplot as plt
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -86,8 +87,9 @@ def event_study() -> None:
 def raw_trends() -> None:
     """The un-differenced series. Shows the selection directly."""
     import duckdb
-    from nycbike import config
     import numpy as np
+
+    from nycbike import config
 
     con = duckdb.connect(str(config.DUCKDB_PATH), read_only=True)
     panel = con.execute("""select corridor_id, panel_year, n_segments,
@@ -161,7 +163,6 @@ def equity() -> None:
     Per-resident rather than network-conditioned, because conditioning on the
     existing bike network hides neighborhoods the network never reached.
     """
-    import numpy as np
     tr = pd.read_csv(OUT / "equity_tracts.csv")
     cor = pd.read_csv(OUT / "equity_corridors.csv")
 
@@ -171,7 +172,7 @@ def equity() -> None:
         ("income_q", "Median household income", ["Q1\nlowest", "Q2", "Q3", "Q4", "Q5\nhighest"]),
         ("poc_q", "Share people of color", ["Q1\nleast", "Q2", "Q3", "Q4", "Q5\nmost"]),
     ]
-    for ax, (key, title, ticks) in zip(axes, panels):
+    for ax, (key, title, ticks) in zip(axes, panels, strict=True):
         _style(ax)
         g = tr.groupby(key, observed=True).agg(
             pop=("pop_total", "sum"), ft=("protected_ft", "sum"))
@@ -219,7 +220,7 @@ def equity() -> None:
         ("poc_q", WARN, "By share people of color",
          ["Q1 least", "Q2", "Q3", "Q4", "Q5 most"]),
     ]
-    for ax, (key, c, title, ticks) in zip(axes2, specs):
+    for ax, (key, c, title, ticks) in zip(axes2, specs, strict=True):
         _style(ax)
         med = sw.groupby(key, observed=True)["first_protected_year"].median().sort_index()
         ax.barh(range(len(med)), med - 2013, left=2013, height=.55,
