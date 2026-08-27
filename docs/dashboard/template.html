@@ -1,0 +1,498 @@
+<title>NYC Protected Lane Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#f4f6f8; --surface:#fff; --surface-2:#eef1f5; --raised:#fff;
+  --ink:#12161c; --ink-2:#4a5460; --ink-3:#78838f;
+  --rule:#dde2e8; --rule-2:#c3cad3;
+  --accent:#0b5394; --accent-2:#4a90d9; --accent-soft:#e8eef6;
+  --warn:#b45309; --warn-soft:#fbf0e2;
+  --good:#166534; --bad:#991b1b;
+  --sans:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --shadow:0 1px 2px rgba(18,22,28,.05),0 1px 8px rgba(18,22,28,.04);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0e1218; --surface:#161c25; --surface-2:#1d2531; --raised:#1a222d;
+  --ink:#e9edf2; --ink-2:#a4afbb; --ink-3:#7d8794;
+  --rule:#252d38; --rule-2:#39434f;
+  --accent:#6ea9e6; --accent-2:#8fc0f0; --accent-soft:#152538;
+  --warn:#dda23f; --warn-soft:#2a2114;
+  --good:#4ade80; --bad:#f87171;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 1px 8px rgba(0,0,0,.2);
+}}
+:root[data-theme="dark"]{
+  --ground:#0e1218; --surface:#161c25; --surface-2:#1d2531; --raised:#1a222d;
+  --ink:#e9edf2; --ink-2:#a4afbb; --ink-3:#7d8794;
+  --rule:#252d38; --rule-2:#39434f;
+  --accent:#6ea9e6; --accent-2:#8fc0f0; --accent-soft:#152538;
+  --warn:#dda23f; --warn-soft:#2a2114;
+  --good:#4ade80; --bad:#f87171;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 1px 8px rgba(0,0,0,.2);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+     font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.shell{max-width:1180px;margin:0 auto;padding:0 20px 64px}
+
+header{padding:28px 0 0}
+.hrow{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0 0 4px}
+.sub{color:var(--ink-3);font-size:13px;margin:0}
+.filter{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:500 12px/1 var(--sans);padding:7px 12px;border-radius:999px;cursor:pointer;
+      border:1px solid var(--rule-2);background:var(--surface);color:var(--ink-2)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+nav{display:flex;gap:2px;margin:22px 0 0;border-bottom:1px solid var(--rule);overflow-x:auto}
+.tab{font:600 13px/1 var(--sans);padding:11px 15px;border:0;background:none;cursor:pointer;
+     color:var(--ink-3);border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+section[role=tabpanel]{padding-top:22px}
+section[hidden]{display:none}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;
+     box-shadow:var(--shadow)}
+.kpi__v{font:600 26px/1.1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi__l{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+        color:var(--ink-3);margin-top:6px}
+.kpi__n{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;
+      padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+.card h2{font-size:15px;font-weight:600;margin:0 0 3px}
+.card .note{font-size:12.5px;color:var(--ink-3);margin:0 0 16px;max-width:78ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+
+.est{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(140px,1fr) auto;gap:14px;
+     align-items:center;padding:12px 0;border-top:1px solid var(--rule)}
+.est:first-of-type{border-top:0}
+.est--anchor{background:var(--warn-soft);margin:0 -18px;padding-left:18px;padding-right:18px}
+.est__n{font-size:13.5px}
+.est__m{font-size:11px;color:var(--ink-3);margin-top:2px}
+.est__t{position:relative;height:22px}
+.est__z{position:absolute;top:0;bottom:0;width:1px;background:var(--rule-2)}
+.est__c{position:absolute;top:50%;height:3px;border-radius:2px;background:var(--accent);
+        opacity:.3;transform:translateY(-50%)}
+.est--anchor .est__c{background:var(--warn)}
+.est__d{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:var(--accent);
+        transform:translate(-50%,-50%);box-shadow:0 0 0 2px var(--surface)}
+.est--anchor .est__d{background:var(--warn);box-shadow:0 0 0 2px var(--warn-soft)}
+.est__v{font:600 14px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:right;min-width:62px}
+
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{font:11px var(--sans);fill:var(--ink-3)}
+.gl{stroke:var(--rule);stroke-width:1}
+.vlabel{font:600 10.5px var(--mono);fill:var(--ink-2)}
+
+.tablewrap{overflow-x:auto;max-height:560px;overflow-y:auto;border:1px solid var(--rule);
+           border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px}
+thead th{position:sticky;top:0;background:var(--surface-2);z-index:1;text-align:left;
+         font:600 10.5px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;
+         color:var(--ink-3);padding:10px 12px;border-bottom:1px solid var(--rule-2);
+         cursor:pointer;white-space:nowrap;user-select:none}
+thead th:hover{color:var(--accent)}
+thead th[aria-sort]{color:var(--accent)}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:hover{background:var(--surface-2)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.pill{display:inline-block;font:600 10px/1 var(--sans);padding:4px 7px;border-radius:4px;
+      letter-spacing:.03em;text-transform:uppercase}
+.pill--y{background:var(--accent-soft);color:var(--accent)}
+.pill--n{background:var(--surface-2);color:var(--ink-3)}
+.search{font:400 13px var(--sans);padding:8px 11px;border:1px solid var(--rule-2);
+        border-radius:6px;background:var(--surface);color:var(--ink);width:230px}
+.search:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.trow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.count{font-size:12px;color:var(--ink-3)}
+
+.caveat{border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px 16px;
+        border-radius:0 6px 6px 0;margin-bottom:14px}
+.caveat h3{font-size:13.5px;margin:0 0 4px;font-weight:600}
+.caveat p{margin:0;font-size:12.5px;color:var(--ink-2)}
+footer{margin-top:32px;padding-top:18px;border-top:1px solid var(--rule);
+       font-size:11.5px;color:var(--ink-3);line-height:1.6}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="shell">
+<header>
+  <div class="hrow">
+    <div>
+      <h1>NYC Protected Lane Tracker</h1>
+      <p class="sub">2,234 corridors &middot; 57,353 cyclist-injury crashes &middot; 2013&ndash;2024 &middot;
+        independent analysis of public data</p>
+    </div>
+    <div class="filter" id="boroFilter" role="group" aria-label="Filter by borough"></div>
+  </div>
+  <nav role="tablist" id="tabs"></nav>
+</header>
+
+<section role="tabpanel" id="p-overview">
+  <div class="kpis" id="kpis"></div>
+  <div class="card">
+    <h2>Three defensible methods, three different answers</h2>
+    <p class="note">Estimated change in cyclist injuries after a protected lane, with 95%
+      intervals. None is distinguishable from no change. The highlighted row is the
+      conventional choice &mdash; and the one anchored on the year treated corridors'
+      injuries peaked, which is why it alone points downward.</p>
+    <div id="estimates"></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Cyclist injuries citywide</h2>
+      <p class="note">Total on the bike network, by year.</p>
+      <div id="chartInjuries"></div>
+    </div>
+    <div class="card">
+      <h2>Cycling grew 44.5%</h2>
+      <p class="note">Ridership index from DOT's automated counters, 2014 = 100. Injury counts
+        without this denominator mislead.</p>
+      <div id="chartRidership"></div>
+    </div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p-buildout" hidden>
+  <div class="card">
+    <h2>Corridors given a protected lane, by year</h2>
+    <p class="note">Counts corridors, not blocks &mdash; DOT installs on corridors, and a
+      corridor here is a contiguous run of same-street segments sharing one treatment history.</p>
+    <div id="chartInstalls"></div>
+  </div>
+  <div class="card">
+    <h2>Where the protected network is</h2>
+    <p class="note">Share of each borough's bike-network corridors carrying a protected lane.</p>
+    <div id="chartBoro"></div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p-equity" hidden>
+  <div class="card">
+    <h2>Protected lane miles per 10,000 residents</h2>
+    <p class="note">Across all 2,327 NYC census tracts with population, by quintile. This is a
+      gap, not a gradient: the poorest fifth is not the worst served &mdash; the middle fifth is.</p>
+    <div class="grid2">
+      <div><div id="chartEqIncome"></div></div>
+      <div><div id="chartEqPoc"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Median year the corridor got its lane</h2>
+    <p class="note">The cleanest result in the analysis. Corridors in the poorest fifth of
+      tracts, and in the most-people-of-color fifth, were treated three years later than
+      those in the richest and the whitest.</p>
+    <div class="grid2">
+      <div><div id="chartTimeIncome"></div></div>
+      <div><div id="chartTimePoc"></div></div>
+    </div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p-corridors" hidden>
+  <div class="card">
+    <h2>Every corridor</h2>
+    <p class="note">Click a column to sort. Injury rate is per segment-year, so long corridors
+      are not penalised for length.</p>
+    <div class="trow">
+      <input class="search" id="q" type="search" placeholder="Search street or borough&hellip;"
+             aria-label="Search corridors">
+      <span class="count" id="rowcount"></span>
+    </div>
+    <div class="tablewrap"><table id="tbl">
+      <thead><tr></tr></thead><tbody></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section role="tabpanel" id="p-caveats" hidden>
+  <div class="card">
+    <h2>What is wrong with this data</h2>
+    <p class="note">Every figure on this dashboard inherits these. They are carried as flags in
+      the pipeline rather than cleaned away, so nothing downstream can use a row without being
+      able to see what is wrong with it.</p>
+    <div id="caveats"></div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Independent analysis by a private individual, using public data.</strong> Not
+  affiliated with, commissioned by, endorsed by, or speaking for the New York City Department
+  of Transportation, the Vision Zero program, or any government agency or organization.
+  Findings and any errors are my own.</p>
+  <p>Sources: NYPD Motor Vehicle Collisions (h9gi&#8209;nx95), NYC DOT Bike Routes
+  (mzxg&#8209;pwib), DOT Bicycle Counts (uczf&#8209;rk3c), ACS 2018&ndash;2022 5&#8209;year
+  estimates. Code and full reproduction: github.com/KazmirFahrier/nyc-bike-lane-safety</p>
+</footer>
+</div>
+
+<script>
+const DATA = /*DATA*/;
+</script>
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const el = (t, a = {}, kids = []) => {
+  const n = document.createElementNS(a.ns || "http://www.w3.org/1999/xhtml", t);
+  for (const [k, v] of Object.entries(a)) if (k !== "ns") n.setAttribute(k, v);
+  for (const c of [].concat(kids)) n.append(c);
+  return n;
+};
+const svgEl = (t, a = {}, kids = []) => el(t, {...a, ns: "http://www.w3.org/2000/svg"}, kids);
+const fmt = (n, d = 0) => n == null || Number.isNaN(n) ? "—"
+  : n.toLocaleString("en-US", {minimumFractionDigits: d, maximumFractionDigits: d});
+
+const BOROS = ["All", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
+let boro = "All";
+const corridorsFor = () => boro === "All" ? DATA.corridors
+  : DATA.corridors.filter(c => c.borough === boro);
+
+/* ---------- charts ---------- */
+function axes(w, h, pad) {
+  const s = svgEl("svg", {viewBox: `0 0 ${w} ${h}`, role: "img"});
+  return {s, W: w - pad.l - pad.r, H: h - pad.t - pad.b, pad};
+}
+function barChart(mount, rows, {value, label, fmtV = v => fmt(v, 0), color = "var(--accent)",
+                                h = 210, highlight = () => false} = {}) {
+  mount.textContent = "";
+  if (!rows.length) { mount.append(el("p", {class: "note"}, "No data for this selection.")); return; }
+  const pad = {l: 8, r: 8, t: 16, b: 30};
+  const {s, W, H} = axes(560, h, pad);
+  const max = Math.max(...rows.map(value)) || 1;
+  const bw = W / rows.length;
+  rows.forEach((r, i) => {
+    const v = value(r), bh = Math.max(1, (v / max) * H);
+    const x = pad.l + i * bw + bw * 0.16, y = pad.t + H - bh;
+    s.append(svgEl("rect", {x, y, width: bw * 0.68, height: bh, rx: 2,
+      fill: highlight(r) ? "var(--warn)" : color, opacity: highlight(r) ? .95 : .85}));
+    s.append(svgEl("text", {x: x + bw * 0.34, y: y - 5, "text-anchor": "middle",
+      class: "vlabel"}, [fmtV(v)]));
+    s.append(svgEl("text", {x: x + bw * 0.34, y: pad.t + H + 18, "text-anchor": "middle",
+      class: "ax"}, [String(label(r))]));
+  });
+  s.append(svgEl("line", {x1: pad.l, x2: pad.l + W, y1: pad.t + H, y2: pad.t + H, class: "gl"}));
+  mount.append(s);
+}
+function lineChart(mount, rows, {x, y, fmtV = v => fmt(v, 0), h = 210, color = "var(--accent)"} = {}) {
+  mount.textContent = "";
+  const pad = {l: 34, r: 10, t: 16, b: 30};
+  const {s, W, H} = axes(560, h, pad);
+  const ys = rows.map(y), min = Math.min(...ys) * 0.92, max = Math.max(...ys) * 1.04;
+  const px = i => pad.l + (i / (rows.length - 1)) * W;
+  const py = v => pad.t + H - ((v - min) / (max - min || 1)) * H;
+  [0, .5, 1].forEach(f => {
+    const v = min + f * (max - min), yy = py(v);
+    s.append(svgEl("line", {x1: pad.l, x2: pad.l + W, y1: yy, y2: yy, class: "gl"}));
+    s.append(svgEl("text", {x: pad.l - 6, y: yy + 4, "text-anchor": "end", class: "ax"}, [fmtV(v)]));
+  });
+  const d = rows.map((r, i) => `${i ? "L" : "M"}${px(i)},${py(y(r))}`).join(" ");
+  s.append(svgEl("path", {d, fill: "none", stroke: color, "stroke-width": 2.2,
+    "stroke-linejoin": "round"}));
+  rows.forEach((r, i) => {
+    s.append(svgEl("circle", {cx: px(i), cy: py(y(r)), r: 3, fill: color}));
+    if (i % 2 === 0 || i === rows.length - 1)
+      s.append(svgEl("text", {x: px(i), y: pad.t + H + 18, "text-anchor": "middle",
+        class: "ax"}, [String(x(r))]));
+  });
+  mount.append(s);
+}
+
+/* ---------- overview ---------- */
+function renderKpis() {
+  const c = corridorsFor();
+  const treated = c.filter(x => x.is_protected).length;
+  const inj = c.reduce((a, x) => a + (x.injuries || 0), 0);
+  const deaths = c.reduce((a, x) => a + (x.deaths || 0), 0);
+  const items = [
+    [fmt(c.length), "Corridors", boro === "All" ? "citywide bike network" : boro],
+    [fmt(treated), "With a protected lane", `${(100 * treated / (c.length || 1)).toFixed(1)}% of corridors`],
+    [fmt(inj), "Cyclist injuries", "2013–2024, on the network"],
+    [fmt(deaths), "Cyclist deaths", "2013–2024, on the network"],
+  ];
+  $("#kpis").textContent = "";
+  for (const [v, l, n] of items)
+    $("#kpis").append(el("div", {class: "kpi"}, [
+      el("div", {class: "kpi__v"}, [v]), el("div", {class: "kpi__l"}, [l]),
+      el("div", {class: "kpi__n"}, [n])]));
+}
+function renderEstimates() {
+  const LO = -60, HI = 40, pos = v => (100 * (v - LO) / (HI - LO)).toFixed(2) + "%";
+  const m = $("#estimates"); m.textContent = "";
+  for (const e of DATA.estimates) {
+    const track = el("div", {class: "est__t", role: "img",
+      "aria-label": `${e.pct > 0 ? "+" : ""}${e.pct}%, 95% interval ${e.lo} to ${e.hi}`}, [
+      el("span", {class: "est__z", style: `left:${pos(0)}`}),
+      el("span", {class: "est__c",
+        style: `left:${pos(e.lo)};width:calc(${pos(e.hi)} - ${pos(e.lo)})`}),
+      el("span", {class: "est__d", style: `left:${pos(e.pct)}`})]);
+    m.append(el("div", {class: "est" + (e.anchor ? " est--anchor" : "")}, [
+      el("div", {}, [el("div", {class: "est__n"}, [e.label]),
+                     el("div", {class: "est__m"}, [e.method])]),
+      track,
+      el("div", {class: "est__v"}, [(e.pct > 0 ? "+" : "") + e.pct.toFixed(1) + "%"])]));
+  }
+}
+function renderOverviewCharts() {
+  lineChart($("#chartInjuries"), DATA.yearly, {x: r => r.panel_year, y: r => r.injuries});
+  lineChart($("#chartRidership"), DATA.yearly.filter(r => r.ridership != null),
+    {x: r => r.panel_year, y: r => r.ridership, color: "var(--warn)", fmtV: v => fmt(v, 0)});
+}
+
+/* ---------- build-out ---------- */
+function renderBuildout() {
+  const c = corridorsFor().filter(x => x.first_protected_year >= 2013 && x.first_protected_year <= 2024);
+  const by = new Map();
+  for (const x of c) by.set(x.first_protected_year, (by.get(x.first_protected_year) || 0) + 1);
+  const rows = [...by.entries()].sort((a, b) => a[0] - b[0]).map(([y, n]) => ({y, n}));
+  barChart($("#chartInstalls"), rows, {value: r => r.n, label: r => r.y});
+
+  const all = DATA.corridors;
+  const rows2 = BOROS.slice(1).map(b => {
+    const t = all.filter(x => x.borough === b);
+    return {b, pct: 100 * t.filter(x => x.is_protected).length / (t.length || 1)};
+  }).sort((a, b) => b.pct - a.pct);
+  barChart($("#chartBoro"), rows2, {value: r => r.pct, label: r => r.b,
+    fmtV: v => v.toFixed(1) + "%", highlight: r => boro !== "All" && r.b === boro});
+}
+
+/* ---------- equity ---------- */
+const QL = {income: ["Q1 lowest", "Q2", "Q3", "Q4", "Q5 highest"],
+            poc: ["Q1 least", "Q2", "Q3", "Q4", "Q5 most"]};
+function renderEquity() {
+  for (const kind of ["income", "poc"]) {
+    const rows = DATA.equity.filter(r => r.kind === kind).sort((a, b) => a.quintile - b.quintile);
+    barChart($(kind === "income" ? "#chartEqIncome" : "#chartEqPoc"), rows, {
+      value: r => r.miles_per_10k, label: r => QL[kind][r.quintile - 1],
+      fmtV: v => v.toFixed(2), h: 190,
+      color: kind === "income" ? "var(--accent)" : "var(--warn)"});
+    const t = DATA.timing.filter(r => r.kind === kind).sort((a, b) => a.quintile - b.quintile);
+    barChart($(kind === "income" ? "#chartTimeIncome" : "#chartTimePoc"), t, {
+      value: r => r.median_year - 2012, label: r => QL[kind][r.quintile - 1],
+      fmtV: v => String(v + 2012), h: 190,
+      color: kind === "income" ? "var(--accent)" : "var(--warn)"});
+  }
+}
+
+/* ---------- corridor table ---------- */
+const COLS = [
+  {k: "street", t: "Street", n: false},
+  {k: "borough", t: "Borough", n: false},
+  {k: "is_protected", t: "Protected", n: false},
+  {k: "first_protected_year", t: "Year", n: true},
+  {k: "n_segments", t: "Blocks", n: true},
+  {k: "injuries", t: "Injuries", n: true},
+  {k: "inj_per_seg_year", t: "Inj/blk-yr", n: true},
+  {k: "income", t: "Tract income", n: true},
+];
+let sortK = "injuries", sortD = -1;
+function renderTable() {
+  const q = ($("#q").value || "").toLowerCase();
+  let rows = corridorsFor();
+  if (q) rows = rows.filter(r => (r.street || "").toLowerCase().includes(q)
+                              || (r.borough || "").toLowerCase().includes(q));
+  rows = rows.slice().sort((a, b) => {
+    const x = a[sortK], y = b[sortK];
+    if (x == null) return 1; if (y == null) return -1;
+    return (x > y ? 1 : x < y ? -1 : 0) * sortD;
+  }).slice(0, 400);
+
+  const hr = $("#tbl thead tr"); hr.textContent = "";
+  for (const c of COLS) {
+    const th = el("th", c.k === sortK ? {"aria-sort": sortD === 1 ? "ascending" : "descending"} : {},
+      [c.t + (c.k === sortK ? (sortD === 1 ? " ↑" : " ↓") : "")]);
+    if (c.n) th.classList.add("num");
+    th.addEventListener("click", () => {
+      if (sortK === c.k) sortD = -sortD; else { sortK = c.k; sortD = -1; }
+      renderTable();
+    });
+    hr.append(th);
+  }
+  const tb = $("#tbl tbody"); tb.textContent = "";
+  for (const r of rows) {
+    const tr = el("tr");
+    tr.append(el("td", {}, [r.street || "—"]));
+    tr.append(el("td", {}, [r.borough || "—"]));
+    tr.append(el("td", {}, [el("span",
+      {class: "pill " + (r.is_protected ? "pill--y" : "pill--n")},
+      [r.is_protected ? "yes" : "no"])]));
+    tr.append(el("td", {class: "num"}, [r.first_protected_year ? String(r.first_protected_year) : "—"]));
+    tr.append(el("td", {class: "num"}, [fmt(r.n_segments)]));
+    tr.append(el("td", {class: "num"}, [fmt(r.injuries)]));
+    tr.append(el("td", {class: "num"}, [r.inj_per_seg_year == null ? "—" : r.inj_per_seg_year.toFixed(3)]));
+    tr.append(el("td", {class: "num"}, [r.income == null ? "—" : "$" + fmt(r.income)]));
+    tb.append(tr);
+  }
+  $("#rowcount").textContent =
+    `${fmt(rows.length)} shown${rows.length === 400 ? " (top 400 by current sort)" : ""}`;
+}
+
+/* ---------- caveats ---------- */
+const CAVEATS = [
+  ["7.5% of crashes cannot be placed on a map",
+   "And the rate is not stable: 86.3% of 2016 records geocoded successfully against 94.8% in 2023. 217 records place the crash at latitude 0, in the Gulf of Guinea. Any year-over-year corridor comparison inherits that swing."],
+  ["92% of crashes are equidistant from two or more streets",
+   "NYPD geocodes to the street centerline, and segments meet end-to-end at intersections. Ties are broken on the street NYPD independently reports; where the tied segments still disagree about treatment (3,911 crashes, 13.4%) the crash is excluded rather than assigned arbitrarily."],
+  ["“Protected” in the route file means two different things",
+   "5,220 records are on-street protected lanes; 3,215 are greenway and park paths carrying the identical label. Only the former are treated as treatment here — conflating them credits street redesign with greenway safety."],
+  ["403 lanes claim install dates before 1990",
+   "1894, 1900, 1909 — inherited from the underlying street centerline rather than from any bike facility. A further 439 protected segments are retired with no recorded end date."],
+  ["Two bridge counters are double-counted",
+   "The two Manhattan Bridge counters report identical daily totals on 2,338 days from the same coordinates; the Brooklyn Bridge has the same duplication. Summing all counters overstates the busiest crossings in the city."],
+  ["Ridership is modelled, not measured, at corridor level",
+   "The city has 41 automated counters and this study covers 4,357 treated segments. Corridor exposure is a citywide index, not a local count — the weakest link in the design."],
+  ["No estimate here is a causal effect",
+   "Treatment timing is selected on a transitory injury spike, so the effect cannot be separated from the mean reversion that follows. The three estimates disagree in sign depending on the reference year. Read them as a demonstration that the question is not identified, not as an answer."],
+];
+function renderCaveats() {
+  const m = $("#caveats"); m.textContent = "";
+  for (const [h, p] of CAVEATS)
+    m.append(el("div", {class: "caveat"}, [el("h3", {}, [h]), el("p", {}, [p])]));
+}
+
+/* ---------- shell ---------- */
+const TABS = [["overview", "Overview"], ["buildout", "The build-out"], ["equity", "Equity"],
+              ["corridors", "Corridors"], ["caveats", "Data caveats"]];
+function renderAll() {
+  renderKpis(); renderEstimates(); renderOverviewCharts();
+  renderBuildout(); renderEquity(); renderTable();
+}
+function init() {
+  const bf = $("#boroFilter");
+  for (const b of BOROS) {
+    const c = el("button", {class: "chip", type: "button",
+      "aria-pressed": String(b === boro)}, [b]);
+    c.addEventListener("click", () => {
+      boro = b;
+      [...bf.children].forEach(x => x.setAttribute("aria-pressed", String(x.textContent === b)));
+      renderAll();
+    });
+    bf.append(c);
+  }
+  const nav = $("#tabs");
+  TABS.forEach(([id, label], i) => {
+    const t = el("button", {class: "tab", role: "tab", type: "button",
+      "aria-selected": String(i === 0), "aria-controls": "p-" + id}, [label]);
+    t.addEventListener("click", () => {
+      [...nav.children].forEach((x, j) => {
+        x.setAttribute("aria-selected", String(j === i));
+        $("#p-" + TABS[j][0]).hidden = j !== i;
+      });
+    });
+    nav.append(t);
+  });
+  $("#q").addEventListener("input", renderTable);
+  renderCaveats();
+  renderAll();
+}
+init();
+})();
+</script>

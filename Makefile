@@ -1,7 +1,7 @@
 # Reproduce the study end to end. Every target is idempotent.
 VENV := .venv/bin
 
-.PHONY: help setup ingest spatial dbt-deps dbt-stage corridors dbt postgis-up postgis-corridors postgis-down analysis all clean
+.PHONY: help setup ingest spatial dbt-deps dbt-stage corridors dbt equity figures maps dashboard-data dashboard brief postgis-up postgis-corridors postgis-down analysis all clean
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "};{printf "  %-20s %s\n",$$1,$$2}'
@@ -53,7 +53,27 @@ postgis-down:  ## stop and remove the container
 analysis:  ## staggered difference-in-differences
 	$(VENV)/python analysis/did.py
 
-all: ingest spatial dbt-stage corridors dbt analysis  ## the whole pipeline, in dependency order
+equity:  ## tract-level equity stratification (ACS, no API key needed)
+	$(VENV)/python -m nycbike.ingest.acs
+	$(VENV)/python analysis/equity.py
+
+figures:  ## charts for the brief
+	$(VENV)/python analysis/figures.py
+
+maps:  ## the three maps
+	$(VENV)/python analysis/maps.py
+
+dashboard-data:  ## export JSON for the web dashboard and CSVs for Tableau
+	$(VENV)/python scripts/export_dashboard_data.py
+
+dashboard: dashboard-data  ## build the self-contained interactive dashboard
+	$(VENV)/python scripts/build_dashboard.py
+
+brief:  ## render the policy brief to PDF and HTML
+	$(VENV)/python scripts/build_brief.py
+	$(VENV)/python scripts/build_brief_web.py
+
+all: ingest spatial dbt-stage corridors dbt analysis equity figures maps dashboard brief  ## the whole pipeline, in dependency order
 
 clean:  ## remove derived data, keep raw pulls
 	rm -f data/nycbike.duckdb data/interim/*.parquet

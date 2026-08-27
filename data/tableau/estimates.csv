@@ -1,0 +1,4 @@
+label,method,pct,lo,hi,anchor
+Compared to the year before installation,"Callaway-Sant'Anna, base = last pre-treatment year",-17.7,-57.3,20.2,True
+Compared to the earlier pre-installation years,"Callaway-Sant'Anna, base = four years before that",8.0,-16.6,34.7,False
+"Compared within each corridor, before vs after","Poisson fixed effects, CEM-matched, corridor-clustered",12.1,-4.3,31.3,False

@@ -64,7 +64,9 @@ a gradient* — the poorest fifth is not the worst served (0.17); the middle fif
 nuance is in the brief.
 
 📄 **[Read the eight-page policy brief](docs/brief/protected-bike-lanes-brief.pdf)** (PDF) ·
-also built as a [web version](docs/brief/brief_web.html)
+[web version](docs/brief/brief_web.html) · [interactive dashboard](docs/dashboard/dashboard.html)
+
+![Where New York built its protected bike lanes](analysis/output/map_buildout.png)
 
 ![Injuries on treated corridors rose 55% before the lane went in](analysis/output/raw_trends.png)
 
@@ -211,7 +213,8 @@ descendants when it needed ancestors. Each would have met the first person to cl
 - [x] Six-page policy brief
 - [x] Clean-room reproduction from a fresh clone
 - [x] Equity stratification by census tract (ACS via Census FTP summary files — no API key)
-- [ ] QGIS maps and Tableau Public dashboard
+- [x] Three maps, built by the pipeline so they regenerate with the data
+- [x] Interactive dashboard, self-contained; Tableau-ready extracts + build guide
 
 ## License
 
