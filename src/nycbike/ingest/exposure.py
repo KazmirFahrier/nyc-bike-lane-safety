@@ -14,7 +14,9 @@ the bytes, and the control totals prove it is the same answer.
 
 **Two data-quality traps, both preserved rather than cleaned away:**
 
-  status=4 covers 1.30M of 7.38M readings (17.6%). It is not documented in the
+  status=4 covers 1,253,944 of 6,208,848 study-window readings (20.2%).
+  The full interval total matches the control total recorded on August 25, 2026.
+  The status breakdown was verified against the source on September 3, 2026. It is not documented in the
   data dictionary as of this writing. We keep status as a grouping key so the
   downstream model can include or exclude it and the robustness grid can test
   whether the choice matters, rather than baking one guess into the raw layer.

@@ -119,7 +119,7 @@ class, and borough narrows this; it does not eliminate it. The brief says so.
 | NYPD via NYC Open Data | Motor Vehicle Collisions – Crashes (`h9gi-nx95`) | 57,353 cyclist-involved, 2013–24 | Outcome |
 | NYPD via NYC Open Data | Motor Vehicle Collisions – Person (`f55k-p6yu`) | — | Injury severity |
 | NYC DOT | Bike Routes (`mzxg-pwib`) | 29,695 segments | Treatment + timing |
-| NYC DOT | Bicycle Counts (`uczf-rk3c`) | 7.4M counter readings | Exposure |
+| NYC DOT | Bicycle Counts (`uczf-rk3c`) | 6,208,848 readings, 2013 through 2024 | Exposure |
 | NYC DOT | Bicycle Counters (`smn3-rzf9`) | 41 counter sites | Exposure geography |
 | NYC DOT | Bicycle & Pedestrian Counts (`ct66-47at`) | 21.0M | Exposure |
 | Census Bureau | ACS 5-Year, tract level | — | Equity stratification |

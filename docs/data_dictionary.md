@@ -212,7 +212,7 @@ downstream model can use a row without being able to see what is wrong with it.
 | Crashes whose nearest two centerlines disagree on treatment | 3,911 of 29,113 matched (13.4%) | `assignment_contested` |
 | "Protected" segments with install dates before 1990 (1894, 1900, 1909) | 403 | `has_suspect_install_date` |
 | Protected segments retired with no successor to date the removal | 439 | `has_undated_removal` |
-| Counter readings with undocumented `status=4` | 1.30M of 7.38M readings, carrying 24% of measured passages | kept as a grouping key, never silently included or excluded |
+| Counter readings with undocumented `status=4` | 1,253,944 of 6,208,848 readings (20.2%) in 2013 through 2024, carrying 24.0% of measured passages | kept as a grouping key, never silently included or excluded |
 | Counter site-days that are 96 intervals of zero (offline, not empty) | 4.0% of site-days | `is_likely_offline` |
 | Two bridges instrumented twice under different ids | Manhattan Bridge (100047029/100062893) identical on 2,338 days; Brooklyn Bridge (300020241/300020904) | `duplicate_counter_ids` var |
 | No ridership measurement for 2013 | 262 usable site-days citywide, no site clearing 50 | `has_exposure` |
