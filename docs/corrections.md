@@ -9,8 +9,8 @@ Updated October 1, 2026. This correction replaces the original published analysi
 | Descriptive corridors | 2,234 | 2,244 |
 | Corridors first treated during 2013 through 2024 | 519 | 523 |
 | Treated corridors in the matched design | 472 | 383 |
-| Staggered adoption, last preyear | −17.7% | −30.6%, interval −78.0% to +8.8% |
-| Staggered adoption, earlier prewindow | +8.0% | −4.2%, interval −30.6% to +20.0% |
+| Staggered adoption, last preyear | −17.7% | −30.6%, interval −79.9% to +6.7% |
+| Staggered adoption, earlier prewindow | +8.0% | −4.2%, interval −30.4% to +20.6% |
 | Poisson on common support | +12.1% | +21.3%, interval +2.0% to +44.3% |
 
 The corrected estimates jointly reflect changes to treatment histories, eligibility, cohort windows, time specific support, Poisson sample coverage and weighting. This table does not isolate the contribution of any individual correction. The old Poisson regression used maximum cohort weights; the corrected specification is an unweighted restriction to the common support population. The old count sample omitted 2013; the corrected sample retains it. These changes are part of the specification change and are not evidence of a new policy effect.
@@ -47,7 +47,7 @@ The original claims that the preperiod baseline reverses the estimate's sign and
 
 **Why.** Changing controls can invalidate weights calibrated to the original control population. Comparing incomplete baseline windows mixes different preperiod definitions. Arbitrarily collapsing distinct cohort weights obscures the regression's target population.
 
-**Checked by.** A known arithmetic example checks control weights after a future treated control leaves. Block bootstrap multiplicities preserve whole corridor histories and recompute support within each draw. The bootstrap is calculated in batches with 1,000 draws and a fixed seed. Corridor IDs are sorted before assigning draws, so database row order cannot change the confidence intervals. The first fresh checkout caught this ordering defect; a regression test now shuffles both inputs and requires identical draws. All 77 Python group and time estimates agree with the independent R implementation within 3.1 × 10⁻¹⁶. This validates computation, not parallel trends or causal identification.
+**Checked by.** A known arithmetic example checks control weights after a future treated control leaves. Block bootstrap multiplicities preserve whole corridor histories and recompute support within each draw. The bootstrap is calculated in batches with 1,000 draws and a fixed seed. Corridor IDs are sorted before assigning draws, so database row order cannot change the confidence intervals. The first fresh checkout caught this draw ordering defect. The second showed that graph component numbers also depended on database row order. Components are now numbered by their smallest segment ID. Separate regression tests shuffle the estimator inputs and segment geometry rows and require stable draws and corridor identities. All 77 Python group and time estimates agree with the independent R implementation within 3.1 × 10⁻¹⁶. This validates computation, not parallel trends or causal identification.
 
 ## 4. Equity definitions and medians
 
@@ -67,7 +67,7 @@ The original claims that the preperiod baseline reverses the estimate's sign and
 
 **Why.** A successful script must mean the current models generated the reported result. Separate numerical and narrative copies drift. Tests and arithmetic checks should fail when their stated conditions do not hold.
 
-**Checked by.** The local run passes 46 Python tests, 32 dbt data tests and lint. The publication validator compares model estimates, baseline normalization, timing groups, generated report text and inlined dashboard data. The five page PDF was rendered and visually inspected. Sources, environment versions, code hashes and validation summaries are recorded in `analysis/output/run_manifest.json`. The fresh checkout result is recorded in the pull request after completion.
+**Checked by.** The local run passes 47 Python tests, 32 dbt data tests and lint. The publication validator compares model estimates, baseline normalization, timing groups, generated report text and inlined dashboard data. The five page PDF was rendered and visually inspected. Sources, environment versions, code hashes and validation summaries are recorded in `analysis/output/run_manifest.json`. The fresh checkout result is recorded in the pull request after completion.
 
 ## 6. Interpretation and remaining uncertainty
 

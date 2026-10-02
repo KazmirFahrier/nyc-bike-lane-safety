@@ -61,7 +61,8 @@ def _endpoints(geom):
     return coords[0], coords[-1]
 
 
-def components_within_tolerance(geoms: gpd.GeoSeries, tolerance: float = ENDPOINT_TOLERANCE_FT):
+def components_within_tolerance(geoms: gpd.GeoSeries, tolerance: float = ENDPOINT_TOLERANCE_FT,
+                                unit_ids=None):
     """Label connected components over an endpoint-adjacency graph.
 
     Two geometries are adjacent when an endpoint of one lies within `tolerance`
@@ -69,7 +70,8 @@ def components_within_tolerance(geoms: gpd.GeoSeries, tolerance: float = ENDPOIN
     Split out from build_corridors so the graph logic can be tested on
     hand-built geometry without a database.
 
-    Returns an integer label per input geometry, in input order.
+    Returns an integer label per input geometry, in input order. When unit IDs
+    are supplied, components are numbered by their smallest stable unit ID.
     """
     n = len(geoms)
     if n == 0:
@@ -87,6 +89,12 @@ def components_within_tolerance(geoms: gpd.GeoSeries, tolerance: float = ENDPOIN
     keep = a != b
     adj = coo_matrix((np.ones(keep.sum()), (a[keep], b[keep])), shape=(n, n))
     _, labels = connected_components(adj, directed=False)
+    if unit_ids is not None:
+        # Graph component numbers otherwise depend on the database row order.
+        units = np.asarray(unit_ids)
+        minimum = {label: min(units[labels == label]) for label in np.unique(labels)}
+        rank = {label: i for i, label in enumerate(sorted(minimum, key=minimum.get))}
+        labels = np.array([rank[label] for label in labels])
     return labels
 
 
@@ -159,7 +167,7 @@ def build_corridors() -> gpd.GeoDataFrame:
             n_groups += 1
             continue
 
-        labels = components_within_tolerance(sub.geometry)
+        labels = components_within_tolerance(sub.geometry, unit_ids=sub["segmentid"])
         corridor_ids[gdf.index.get_indexer(idx)] = [f"{key}|{lb}" for lb in labels]
         n_groups += 1
 

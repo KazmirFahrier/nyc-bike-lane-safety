@@ -75,9 +75,8 @@ def event_study() -> None:
     fig.text(0.13, 0.945, "Before and after estimates with their uncertainty",
              fontsize=13, color=INK, ha="left", va="top", weight="medium")
     fig.text(0.13, 0.885,
-             "Measured against the year before installation. A point below zero means injuries were lower\n"
-             "than in that base year, so the rising pre-period line is a corridor getting more dangerous\n"
-             "before installation. Cohort composition can vary across event times.",
+             "Recorded treated versus comparison injury differences, relative to the year before installation.\n"
+             "Negative preperiod estimates are below that reference. Cohort composition varies across event times.",
              fontsize=8.6, color="#555555", ha="left", va="top", linespacing=1.45)
 
     fig.savefig(OUT / "event_study.png", dpi=180)
@@ -85,7 +84,7 @@ def event_study() -> None:
 
 
 def raw_trends() -> None:
-    """The un-differenced series. Shows the selection directly."""
+    """Descriptive injury series; these do not identify the selection mechanism."""
     import numpy as np
     from did import load
 
@@ -137,7 +136,7 @@ def spec_ladder() -> None:
     cm = pd.read_csv(OUT / "count_models.csv")
     labels = {"1_pooled_nb": "Pooled\n(year + borough only)",
               "3_poisson_fe": "+ corridor and\nyear fixed effects",
-              "4_poisson_fe_matched": "+ CEM matching"}
+              "4_poisson_fe_matched": "Common support\nsample"}
     cm["pct"] = 100 * (np.exp(cm["coef"]) - 1)
     cm["lo"] = 100 * (np.exp(cm["coef"] - 1.96 * cm["se"]) - 1)
     cm["hi"] = 100 * (np.exp(cm["coef"] + 1.96 * cm["se"]) - 1)
@@ -152,7 +151,7 @@ def spec_ladder() -> None:
     ax.set_yticklabels([labels.get(s, s) for s in cm["spec"]], fontsize=9)
     ax.invert_yaxis()
     ax.set_xlabel("Estimated change in cyclist injuries (%)", fontsize=10)
-    ax.set_title("What you condition on changes the answer",
+    ax.set_title("Estimates vary across samples and specifications",
                  fontsize=12, color=INK, loc="left", pad=14)
     fig.tight_layout()
     fig.savefig(OUT / "spec_ladder.png", dpi=180)
