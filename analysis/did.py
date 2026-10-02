@@ -5,9 +5,9 @@ effects, implemented directly. Two-way fixed effects is *not* used as the
 headline, because with staggered adoption and effects that change over time,
 TWFE weights some 2x2 comparisons negatively -- already-treated corridors serve
 as controls for later-treated ones, and the estimate can carry the wrong sign
-even when every underlying effect is negative (Goodman-Bacon 2021). The naive
-TWFE number is computed anyway and reported beside the main one, so the size of
-that problem is visible rather than asserted.
+even when every underlying effect is negative (Goodman-Bacon 2021). The supplementary
+TWFE number uses an unweighted common support sample. Its differences from the
+main estimator combine weighting and sample changes, not just TWFE bias.
 
 For each cohort g and period t:
 
@@ -21,13 +21,10 @@ before the lane went in.
 segments; using raw counts would let long corridors dominate and would confound
 corridor length with effect size.
 
-**On exposure.** A DiD against contemporaneous controls differences out
-citywide ridership growth automatically -- both groups live through the same
-years. What it cannot difference out is *differential* ridership change: if a
-protected lane itself attracts riders, treated corridors gain exposure that
-controls do not, and the estimate understates the per-rider safety gain. With
-41 counters this study cannot measure that, and the brief says so rather than
-implying the exposure offset in the negative binomial fixes it.
+**On exposure.** Contemporaneous controls account for common time shocks
+under the identifying assumptions. They do not measure local ridership or
+remove differential exposure changes. The citywide counter index supplies no
+local denominator, so these injury count estimates are not risk per rider.
 
 **Inference** is a corridor-level block bootstrap. Injuries within a corridor
 are correlated across years; treating corridor-years as independent would
@@ -55,8 +52,7 @@ from nycbike.logging_setup import setup
 
 # 1,000 replications for published numbers. Override for a fast smoke run:
 #   NYCBIKE_N_BOOT=50 python analysis/did.py
-# The clean-room reproduction uses a low value to check that the pipeline runs,
-# not to reproduce the confidence intervals.
+# The fresh checkout reproduction uses all 1,000 draws and compares intervals.
 N_BOOT = int(os.environ.get("NYCBIKE_N_BOOT", "1000"))
 RNG_SEED = 20260824  # fixed so the numbers in the brief are reproducible
 EVENT_WINDOW = (-5, 5)
@@ -232,7 +228,8 @@ def bootstrap(panel: pd.DataFrame, matched: pd.DataFrame, n_boot: int = N_BOOT):
     difference between them is not itself bootstrap noise.
     """
     rng = np.random.default_rng(RNG_SEED)
-    corridors = matched["corridor_id"].unique()
+    # Canonical IDs keep fixed draws independent of database row order.
+    corridors = np.sort(matched["corridor_id"].unique())
     positions = pd.Series(range(len(corridors)), index=corridors)
     # Multinomial multiplicities are exactly a corridor block bootstrap.
     # Compute all resamples together, avoiding thousands of repeated joins.

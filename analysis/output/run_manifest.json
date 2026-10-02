@@ -1,10 +1,10 @@
 {
-  "recorded_utc": "2026-10-02T00:18:48.228396+00:00",
+  "recorded_utc": "2026-10-02T00:25:22.331416+00:00",
   "base_commit": "42359f83c273e0822a968392889dde4df1bfe430",
   "code_sha256": {
     "Makefile": "f0131644d84b619ff36b9340bdd03239f49603e2b857007cc1ce9390a4a1d0e1",
     "analysis/count_models.py": "ee473723055696eea3290be4892b2b35ae70ac98121138c7ad8b137ad6329c80",
-    "analysis/did.py": "4faa77efdc8a64f7858fd59324fb9ae4299303e1390ecbdf902c3b879aea73fa",
+    "analysis/did.py": "b6d233e41333b5cdc593a68f46ce8121d75ef44bb65b4382949c55d06bbcc6fa",
     "analysis/did_validation.R": "46290594d8f80a880edb647a553cb0fef218bc09ca25e090e1ef947a6268ab6f",
     "analysis/equity.py": "919f29ba052bef7929a2e96bddd69a20f187dbde0461b33c239fe995dedf3034",
     "analysis/figures.py": "4b35759e2172cbf9de175d1a85928a62e16c655a6e2ad437472e76805ef3256b",
@@ -62,7 +62,7 @@
     "tests/conftest.py": "a375cb83e2e2ac8819aaceb35f5799f2798a9c74d8f43f498430f3d7b578fc48",
     "tests/test_corridors.py": "7531db8c38f6271a601c7bbd08772d2fe1ee1dd3d9e76a6a736b3aab5cc6544e",
     "tests/test_count_models.py": "9e1a6dec942c2105015ed5d80b9a6aeafb27412432a0866832d52b5f676329df",
-    "tests/test_did.py": "9c236be0778ab7fa7b42969d2fd4e9cd428ec545388d7ccacc8e736ba4cec7ab",
+    "tests/test_did.py": "1ffce78ac9847b39d578bbd9e8e5ee23ebeae941014bd0a25e3bc932cd73787d",
     "tests/test_equity.py": "3969a0a3aff0d5b99ea68501efae84f964fc0ee7b03d0c9af7a4a79215dfd441",
     "tests/test_socrata.py": "7d7731f17f8cbbddb9b900f05c85181bc8516a7c8cde328cc18cb58a47e99629"
   },
@@ -143,7 +143,7 @@
     "weasyprint": "70.0"
   },
   "validation": {
-    "python_tests_passed": 45,
+    "python_tests_passed": 46,
     "dbt_data_tests_passed": 32,
     "r_group_time_cells": 77,
     "r_max_absolute_delta": 3.05311331771918e-16,
@@ -157,14 +157,14 @@
     }
   },
   "output_sha256": {
-    "analysis/output/att_gt.csv": "c8611e9f714bd6df26913ceea6ff0101a9e33dad08fd762eeb2ea9f9baa5daed",
+    "analysis/output/att_gt.csv": "16c0adca9d79ffca286e101750f246435bce56651a00489cac8590cb02c91f60",
     "analysis/output/count_models.csv": "6ab5e5b937668a45d170a32d3b5ff2d82f17200b940852a9ca37d5184b725264",
-    "analysis/output/did_summary.csv": "8f865284a443f98becac0db7d6142ad82cf0373919cc898534799b1f42a24ba4",
+    "analysis/output/did_summary.csv": "b3967e0749738b8b4f44b36006bfc891c156401258c09593c16c1f4353a9d001",
     "analysis/output/equity_corridors.csv": "3d578d213e86ca229c8d2f4472c6c7cbd3764062ca80d6aa6ce026e258a40fce",
     "analysis/output/equity_tracts.csv": "7549d1643e107b0870974a1d71611825027ed59da3f677da84e965f23298e11f",
-    "analysis/output/event_study.csv": "2fd4f95a3082974de1b67a79af07c5ae5622f4adeea5711392147890358fe0d9",
-    "analysis/output/r_validation.csv": "ad5f835809e1daeb19f3b713d8f8a1172802e7d01d58e6623b8cb9509e734967",
+    "analysis/output/event_study.csv": "cd9d2d6f7a87bf99876afdd0e4dcb7ddbc4a7f09228a12c65d6672957f6d8776",
+    "analysis/output/r_validation.csv": "a1e6d6fd5c22dd32bf1fdb94b5e538acf90b13dcda0150d4210d8ad4f02990e6",
     "analysis/output/raw_trends.csv": "6d56dce46e3a0959e634140b8c06e1628dde0e251c86e2f528d282023c5771ad",
-    "docs/brief/protected-bike-lanes-brief.pdf": "3b00fe56e06fc36da56ff280d4f6024e2871c66191208ab9b2f98a3eaac473d2"
+    "docs/brief/protected-bike-lanes-brief.pdf": "260e022da14dcc443c53226f1303ff457208e106103d0c6bc3a31fcce73b9171"
   }
 }

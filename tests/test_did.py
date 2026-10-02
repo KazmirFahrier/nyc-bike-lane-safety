@@ -152,7 +152,7 @@ def test_strata_weights_are_rebuilt_when_a_future_control_is_treated():
 
     # Validate batched bootstrap arithmetic against independent explicit
     # resampling and the estimator on the same first five multinomial draws.
-    ids = m.corridor_id.unique()
+    ids = np.sort(m.corridor_id.unique())
     rng = np.random.default_rng(did.RNG_SEED)
     multiplicities = rng.multinomial(len(ids), np.full(len(ids), 1 / len(ids)), size=5)
     for i, counts in enumerate(multiplicities):
@@ -171,3 +171,16 @@ def test_block_bootstrap_preserves_known_constant_effect(two_cohort_panel, two_c
     for event in events.columns:
         expect = -1 if event >= 0 else 0
         assert np.allclose(events[event].dropna(), expect)
+
+
+def test_bootstrap_draws_ignore_input_row_order(two_cohort_panel, two_cohort_matched):
+    # Heterogeneous outcomes ensure permuted draw assignments are detectable.
+    panel = two_cohort_panel.copy()
+    ids = sorted(panel.corridor_id.unique())
+    slopes = dict(zip(ids, np.arange(len(ids)) * 0.3, strict=True))
+    panel['injuries_per_segment'] += panel.corridor_id.map(slopes) * panel.panel_year
+    original = did.bootstrap(panel, two_cohort_matched, n_boot=100)
+    shuffled = did.bootstrap(panel.sample(frac=1, random_state=7),
+                             two_cohort_matched.sample(frac=1, random_state=8), n_boot=100)
+    for expected, actual in zip(original, shuffled, strict=True):
+        np.testing.assert_allclose(expected, actual, atol=1e-10, equal_nan=True)
