@@ -110,3 +110,77 @@ class TestBootstrapPvalue:
 
     def test_handles_all_nan_draws(self):
         assert np.isnan(did.bootstrap_pvalue(np.array([np.nan, np.nan]), 1.0))
+
+
+def test_removed_and_undated_lanes_are_excluded_from_absorbing_design():
+    p = pd.DataFrame({
+        "corridor_id": ["removed", "removed", "unknown", "clean"],
+        "panel_year": [2018, 2019, 2019, 2019],
+        "first_protected_year": [2018, 2018, 2018, 2018],
+        "is_treated": [True, False, True, True],
+        "has_undated_removal": [False, False, True, False],
+    })
+    m = pd.DataFrame({"corridor_id": ["removed", "unknown", "clean"]})
+    panel, matched = did.absorbing_sample(p, m)
+    assert panel.corridor_id.tolist() == ["clean"]
+    assert matched.corridor_id.tolist() == ["clean"]
+
+
+def test_strata_weights_are_rebuilt_when_a_future_control_is_treated():
+    # Both strata have one treated corridor. Removing a future treated control
+    # must leave equal stratum weights, rather than halve the first stratum.
+    rows = []
+    definitions = [("T1", "A", 2018, 0), ("T2", "B", 2018, 0),
+                   ("C1", "A", None, 10), ("F", "A", 2019, 10),
+                   ("C2", "B", None, 0)]
+    for cid, _st, first, delta in definitions:
+        for yr in [2017, 2019]:
+            rows.append({"corridor_id": cid, "panel_year": yr,
+                         "injuries_per_segment": delta if yr == 2019 else 0,
+                         "first_protected_year": first})
+    p = pd.DataFrame(rows)
+    m = pd.DataFrame([{"corridor_id": cid, "cohort_year": 2018,
+                       "is_treated_here": cid.startswith("T"), "boro_code": st,
+                       "injury_bin": "0", "cem_weight": 0.5 if st == "A" and not cid.startswith("T") else 1.0}
+                      for cid, st, _, _ in definitions])
+    gt = did.att_gt(p, m)
+    assert gt.loc[gt.year.eq(2019), "att"].iloc[0] == pytest.approx(-5)
+    draws, _, _ = did.bootstrap(p, m, n_boot=300)
+    finite = draws[~np.isnan(draws)]
+    assert np.isfinite(finite).all()
+    assert finite.min() >= -10 and finite.max() <= 0
+
+    # Validate batched bootstrap arithmetic against independent explicit
+    # resampling and the estimator on the same first five multinomial draws.
+    ids = np.sort(m.corridor_id.unique())
+    rng = np.random.default_rng(did.RNG_SEED)
+    multiplicities = rng.multinomial(len(ids), np.full(len(ids), 1 / len(ids)), size=5)
+    for i, counts in enumerate(multiplicities):
+        draw = np.repeat(ids, counts)
+        rep = pd.DataFrame({"corridor_id": draw, "boot_id": [f"B{j}" for j in range(len(draw))]})
+        bp = p.merge(rep, on="corridor_id").drop(columns="corridor_id").rename(columns={"boot_id": "corridor_id"})
+        bm = m.merge(rep, on="corridor_id").drop(columns="corridor_id").rename(columns={"boot_id": "corridor_id"})
+        reference = did.att_gt(bp, bm)
+        expected = did.aggregate_overall(reference) if not reference.empty else np.nan
+        assert np.isclose(draws[i], expected, equal_nan=True)
+
+
+def test_block_bootstrap_preserves_known_constant_effect(two_cohort_panel, two_cohort_matched):
+    overall, events, _ = did.bootstrap(two_cohort_panel, two_cohort_matched, n_boot=200)
+    assert np.allclose(overall[np.isfinite(overall)], -1)
+    for event in events.columns:
+        expect = -1 if event >= 0 else 0
+        assert np.allclose(events[event].dropna(), expect)
+
+
+def test_bootstrap_draws_ignore_input_row_order(two_cohort_panel, two_cohort_matched):
+    # Heterogeneous outcomes ensure permuted draw assignments are detectable.
+    panel = two_cohort_panel.copy()
+    ids = sorted(panel.corridor_id.unique())
+    slopes = dict(zip(ids, np.arange(len(ids)) * 0.3, strict=True))
+    panel['injuries_per_segment'] += panel.corridor_id.map(slopes) * panel.panel_year
+    original = did.bootstrap(panel, two_cohort_matched, n_boot=100)
+    shuffled = did.bootstrap(panel.sample(frac=1, random_state=7),
+                             two_cohort_matched.sample(frac=1, random_state=8), n_boot=100)
+    for expected, actual in zip(original, shuffled, strict=True):
+        np.testing.assert_allclose(expected, actual, atol=1e-10, equal_nan=True)

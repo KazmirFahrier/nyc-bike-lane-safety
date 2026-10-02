@@ -40,9 +40,10 @@ WITH clustered AS (
         street,
         boro_code,
         first_protected_year,
+        treatment_history,
         geom,
         ST_ClusterDBSCAN(geom, eps := 10.0, minpoints := 1)
-            OVER (PARTITION BY street, boro_code, first_protected_year) AS cluster_seq
+            OVER (PARTITION BY street, boro_code, first_protected_year, treatment_history) AS cluster_seq
     FROM bike_segments
 )
 SELECT
@@ -51,7 +52,7 @@ SELECT
     boro_code,
     first_protected_year,
     dense_rank() OVER (
-        ORDER BY street, boro_code, first_protected_year, cluster_seq
+        ORDER BY street, boro_code, first_protected_year, treatment_history, cluster_seq
     ) AS corridor_pk
 FROM clustered;
 

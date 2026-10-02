@@ -11,7 +11,7 @@
 html { font-size: 10pt; }
 body {
   font-family: "Georgia", "Times New Roman", serif;
-  line-height: 1.42; color: #1a1a1a; hyphens: auto; text-align: justify;
+  line-height: 1.42; color: #1a1a1a; hyphens: none; text-align: justify;
 }
 h1 {
   font-size: 20pt; line-height: 1.18; margin: 0 0 2mm 0;
@@ -42,7 +42,7 @@ th {
   text-align: left; border-bottom: 1pt solid #1a1a1a;
   padding: 2mm 3mm 1.5mm 0; font-weight: 600;
 }
-td { padding: 1.8mm 3mm 1.8mm 0; border-bottom: 0.4pt solid #e0e0e0; }
+td { text-align: left; padding: 1.8mm 3mm 1.8mm 0; border-bottom: 0.4pt solid #e0e0e0; }
 td:last-child, th:last-child { text-align: right; padding-right: 0; }
 
 ul { margin: 2mm 0 4mm 0; padding-left: 5mm; }

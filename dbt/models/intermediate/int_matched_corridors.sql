@@ -11,7 +11,7 @@
 --
 -- Each treated corridor is compared only to corridors in the same borough with
 -- a similar recent injury history, matched on its own three years before
--- treatment. Corridors first treated 2013-2015 have no full pre-window and are
+-- treatment. Corridors first treated 2013-2017 lack the complete five year baseline window and are
 -- excluded from the matched design; they remain in the unmatched robustness spec.
 
-{{ coarsened_exact_matching(ref('fct_corridor_year_panel'), 'corridor_id', var('study_start_year') + 3) }}
+{{ coarsened_exact_matching(ref('fct_corridor_year_panel'), 'corridor_id', var('study_start_year') + 5) }}

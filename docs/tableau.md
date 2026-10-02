@@ -14,8 +14,8 @@ Tableau wants; joining across grains inside Tableau causes duplicate-row inflati
 
 | File | Grain | Rows | Use for |
 |---|---|---|---|
-| `corridors.csv` | one corridor | 2,234 | the corridor table, borough rollups, maps |
-| `corridor_year_panel.csv` | corridor × year | 26,808 | anything with a time axis |
+| `corridors.csv` | one corridor | 2,244 | the corridor table, borough rollups, maps |
+| `corridor_year_panel.csv` | corridor × year | 26,928 | anything with a time axis |
 | `citywide_by_year.csv` | year | 12 | injuries and ridership trend |
 | `equity_by_quintile.csv` | quintile × measure | 10 | lane miles per 10,000 residents |
 | `equity_timing.csv` | quintile × measure | 10 | median install year |
@@ -56,3 +56,7 @@ at every level above the corridor.
 disagree in sign because treatment timing is selected on a transitory injury spike. The
 dashboard's framing — "three defensible methods, three different answers" — is the honest
 one and should survive the port.
+
+## October 2026 correction
+
+The current extracts use complete annual treatment histories. Timing quintiles are defined over all corridors with observed demographics before restricting to treated corridors. Medians retain fractional years. Injury estimates are count associations, not per rider risk estimates. See corrections.md for changes and validation.

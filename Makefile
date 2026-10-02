@@ -1,19 +1,20 @@
 # Reproduce the study end to end. Every target is idempotent.
 VENV := .venv/bin
 
-.PHONY: help setup ingest spatial dbt-deps dbt-stage corridors dbt equity figures maps dashboard-data dashboard brief postgis-up postgis-corridors postgis-down analysis all clean
+.NOTPARALLEL:
+
+.PHONY: help setup ingest spatial dbt-deps dbt-stage corridors dbt equity figures maps dashboard-data dashboard report brief postgis-up postgis-corridors postgis-down analysis all clean
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "};{printf "  %-20s %s\n",$$1,$$2}'
 
 setup:  ## create the venv and install the package
-	uv venv && uv pip install -e ".[dev]"
+	uv venv && uv pip install -e ".[dev,brief]"
 
 ingest:  ## pull every source, reconciled, with receipts
 	$(VENV)/python -m nycbike.ingest.crashes
 	$(VENV)/python -m nycbike.ingest.bike_routes
 	$(VENV)/python -m nycbike.ingest.exposure
-	@echo "ACS needs a free Census API key in .env -- see src/nycbike/ingest/acs.py"
 
 spatial:  ## assign crashes to street segments
 	$(VENV)/python -m nycbike.spatial_join
@@ -36,6 +37,7 @@ corridors:  ## group segments into corridors (DuckDB/graph build) -- needs dbt-s
 
 dbt: dbt-deps  ## build and test the whole warehouse -- needs corridors
 	cd dbt && DBT_PROFILES_DIR=. ../$(VENV)/dbt build
+	$(VENV)/python scripts/gen_data_dictionary.py
 
 postgis-up:  ## start the PostGIS container
 	docker run -d --name nycbike-postgis \
@@ -52,6 +54,7 @@ postgis-down:  ## stop and remove the container
 
 analysis:  ## staggered difference-in-differences
 	$(VENV)/python analysis/did.py
+	$(VENV)/python analysis/count_models.py
 
 equity:  ## tract-level equity stratification (ACS, no API key needed)
 	$(VENV)/python -m nycbike.ingest.acs
@@ -69,7 +72,10 @@ dashboard-data:  ## export JSON for the web dashboard and CSVs for Tableau
 dashboard: dashboard-data  ## build the self-contained interactive dashboard
 	$(VENV)/python scripts/build_dashboard.py
 
-brief:  ## render the policy brief to PDF and HTML
+report:  ## regenerate the numerical report, README and landing page
+	$(VENV)/python scripts/build_report.py
+
+brief: report  ## render the policy brief to PDF and HTML
 	$(VENV)/python scripts/build_brief.py
 	$(VENV)/python scripts/build_brief_web.py
 

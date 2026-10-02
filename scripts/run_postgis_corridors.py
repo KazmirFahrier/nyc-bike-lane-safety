@@ -13,6 +13,8 @@ Usage:
 
 from __future__ import annotations
 
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,7 +28,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from nycbike import config
 from nycbike.logging_setup import setup
 
-CONTAINER = "nycbike-postgis"
+CONTAINER = os.environ.get("NYCBIKE_POSTGIS_CONTAINER", "nycbike-postgis")
 PSQL = ["docker", "exec", "-i", CONTAINER, "psql", "-U", "nycbike", "-d", "nycbike"]
 
 
@@ -44,10 +46,12 @@ def main() -> None:
     con = duckdb.connect(str(config.DUCKDB_PATH), read_only=True)
     segs = con.execute("""
         select t.segmentid, t.street, t.boro_code, t.first_protected_year,
-               r.geometry_wkt
-        from (select distinct segmentid, street, boro_code, first_protected_year,
-                     is_offstreet_path
-              from main.int_segment_treatment) t
+               t.treatment_history, r.geometry_wkt
+        from (select segmentid, any_value(street) as street, any_value(boro_code) as boro_code,
+                     any_value(first_protected_year) as first_protected_year,
+                     bool_and(is_offstreet_path) as is_offstreet_path,
+                     string_agg(is_treated::int::varchar, '' order by panel_year) as treatment_history
+              from main.int_segment_treatment group by segmentid) t
         join (select segmentid, geometry_wkt,
                      row_number() over (partition by segmentid order by install_date desc) rn
               from main_staging.stg_bike_routes) r
@@ -65,7 +69,7 @@ def main() -> None:
 
     log.info("loading segments")
     psql(["-v", "ON_ERROR_STOP=1", "-c",
-          r"\copy bike_segments (segmentid, street, boro_code, first_protected_year, geom_wkt) "
+          r"\copy bike_segments (segmentid, street, boro_code, first_protected_year, treatment_history, geom_wkt) "
           r"FROM STDIN WITH (FORMAT csv)"], csv.read_text())
 
     log.info("building corridors with ST_ClusterDBSCAN")
@@ -109,10 +113,15 @@ def main() -> None:
     log.info("  PostGIS corridors split across DuckDB:   %s", pg_split)
     if py_split == 0 and pg_split == 0 and only_py == 0 and only_pg == 0:
         log.info("  IDENTICAL partition -- the two implementations agree exactly")
+        (ROOT / "analysis/output/postgis_validation.json").write_text(json.dumps({
+            "segments": len(m), "corridors": n_cor, "only_python": only_py,
+            "only_postgis": only_pg, "python_splits": py_split, "postgis_splits": pg_split,
+        }, indent=2) + "\n")
     else:
         log.info("  PARTITIONS DIFFER -- investigate before trusting either")
         d = ct.gt(0).sum(axis=1)
         log.info("  worst DuckDB corridor spans %s PostGIS runs", int(d.max()))
+        raise RuntimeError("PostGIS partition validation failed")
 
 
 if __name__ == "__main__":
