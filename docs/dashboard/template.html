@@ -128,7 +128,7 @@ footer{margin-top:32px;padding-top:18px;border-top:1px solid var(--rule);
   <div class="hrow">
     <div>
       <h1>NYC Protected Lane Tracker</h1>
-      <p class="sub">2,234 corridors &middot; 57,353 cyclist-injury crashes &middot; 2013&ndash;2024 &middot;
+      <p class="sub">/*CORRIDOR_COUNT*/ corridors &middot; 57,353 cyclist-injury crashes &middot; 2013&ndash;2024 &middot;
         independent analysis of public data</p>
     </div>
     <div class="filter" id="boroFilter" role="group" aria-label="Filter by borough"></div>
@@ -139,23 +139,21 @@ footer{margin-top:32px;padding-top:18px;border-top:1px solid var(--rule);
 <section role="tabpanel" id="p-overview">
   <div class="kpis" id="kpis"></div>
   <div class="card">
-    <h2>Three defensible methods, three different answers</h2>
-    <p class="note">Estimated change in cyclist injuries after a protected lane, with 95%
-      intervals. None is distinguishable from no change. The highlighted row is the
-      conventional choice &mdash; and the one anchored on the year treated corridors'
-      injuries peaked, which is why it alone points downward.</p>
+    <h2>Estimates under alternative specifications</h2>
+    <p class="note">Changes in recorded injury counts under alternative specifications, with 95% intervals.
+      The staggered adoption intervals include zero; the common support Poisson interval lies above zero.
+      These associations do not establish safety benefits or harm and do not measure risk per rider.</p>
     <div id="estimates"></div>
   </div>
   <div class="grid2">
     <div class="card">
-      <h2>Cyclist injuries citywide</h2>
+      <h2>Cyclist injuries on the observed bike network</h2>
       <p class="note">Total on the bike network, by year.</p>
       <div id="chartInjuries"></div>
     </div>
     <div class="card">
-      <h2>Cycling grew 44.5%</h2>
-      <p class="note">Ridership index from DOT's automated counters, 2014 = 100. Injury counts
-        without this denominator mislead.</p>
+      <h2>Counter network ridership index</h2>
+      <p class="note">Selected counter sites, 2014 = 100. This is a citywide proxy and does not measure ridership on treated corridors.</p>
       <div id="chartRidership"></div>
     </div>
   </div>
@@ -187,9 +185,7 @@ footer{margin-top:32px;padding-top:18px;border-top:1px solid var(--rule);
   </div>
   <div class="card">
     <h2>Median year the corridor got its lane</h2>
-    <p class="note">The cleanest result in the analysis. Corridors in the poorest fifth of
-      tracts, and in the most-people-of-color fifth, were treated three years later than
-      those in the richest and the whitest.</p>
+    <p class="note">Quintiles are defined across all corridors with observed demographics, then restricted to corridors first treated during the study. These are corridor demographic groups, not tract quintiles. Fractional medians are retained.</p>
     <div class="grid2">
       <div><div id="chartTimeIncome"></div></div>
       <div><div id="chartTimePoc"></div></div>

@@ -43,3 +43,16 @@ def test_all_missing_returns_nan_rather_than_raising():
 def test_all_zero_weight_returns_nan():
     g = pd.DataFrame({"income": [1.0, 2.0], "len_ft": [0.0, 0.0]})
     assert np.isnan(wavg(g, "income"))
+
+
+def test_publication_timing_preserves_population_groups_and_fractional_medians():
+    from nycbike.equity_summary import timing_records
+    d = pd.DataFrame({
+        "treatment_cohort": ["switcher", "switcher", "never_treated"],
+        "first_protected_year": [2021, 2022, np.nan],
+        "income_q": ["Q5 highest", "Q5 highest", "Q1 lowest"],
+        "poc_q": ["Q5 most POC", "Q5 most POC", "Q1 least POC"],
+    })
+    out = timing_records(d)
+    assert [r["quintile"] for r in out] == [5, 5]
+    assert [r["median_year"] for r in out] == [2021.5, 2021.5]

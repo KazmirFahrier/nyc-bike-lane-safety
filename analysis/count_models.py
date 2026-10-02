@@ -27,15 +27,17 @@ estimated and printed together.
       errors must be cluster-robust at the corridor, which is what makes the
       estimate usable rather than the point estimate itself.
 
-  (4) The same, restricted to the CEM-matched sample.
+  (4) The same, restricted to the CEM common support sample (unweighted).
       Fixed effects handle time-invariant selection; matching handles
       comparability of the comparison group. Doing both is belt and braces,
       and if (3) and (4) disagree the matching is doing real work.
 
-Exposure enters every rung as an offset: log(segments) carries corridor length,
-log(citywide ridership index) carries the fact that far more people ride now
-than in 2014. Without the first, long corridors look dangerous; without the
-second, the 44.5% growth in cycling since 2014 is charged to the lanes.
+The corridor size offset is log(segments). A citywide ridership index is
+constant within year and is absorbed by year fixed effects. These models
+estimate injury count associations, not injuries per cyclist. They use the
+recorded annual treatment status and exclude undated removals. The common
+support model is an unweighted restriction to units eligible for at least one
+cohort comparison; it does not collapse distinct cohort CEM weights with max().
 
 Usage:
     python analysis/count_models.py
@@ -61,12 +63,12 @@ def load() -> pd.DataFrame:
     con = duckdb.connect(str(config.DUCKDB_PATH), read_only=True)
     d = con.execute("""
         select p.corridor_id, p.panel_year, p.boro_code, p.n_segments,
-               p.first_protected_year, p.treatment_cohort,
+               p.first_protected_year, p.treatment_cohort, p.is_treated, p.has_undated_removal,
                p.cyclist_injured, p.log_segments, p.log_exposure, p.has_exposure,
-               m.cem_weight, m.in_common_support
+               m.in_common_support
         from main.fct_corridor_year_panel p
         left join (
-            select unit_id as corridor_id, max(cem_weight) as cem_weight,
+            select unit_id as corridor_id,
                    bool_or(in_common_support) as in_common_support
             from main.int_matched_corridors
             where in_common_support and cem_weight > 0
@@ -75,13 +77,21 @@ def load() -> pd.DataFrame:
     """).df()
     con.close()
 
-    d = d[d["has_exposure"] & (d["n_segments"] > 0)].copy()
-    d["treated_now"] = (
-        d["first_protected_year"].notna()
-        & (d["panel_year"] >= d["first_protected_year"])
-    ).astype(int)
-    d["offset_term"] = d["log_segments"] + d["log_exposure"]
+    d = prepare_panel(d)
     d["year"] = d["panel_year"].astype(str)
+    return d
+
+
+def prepare_panel(d: pd.DataFrame) -> pd.DataFrame:
+    """Use annual recorded treatment; do not invent corridor ridership.
+
+    The citywide exposure series is a function of year and is absorbed by
+    year fixed effects. Keep 2013 and omit that redundant offset. Exclude
+    undated retirements, whose annual treatment cannot be verified.
+    """
+    d = d[(d["n_segments"] > 0) & ~d["has_undated_removal"].fillna(False)].copy()
+    d["treated_now"] = d["is_treated"].astype(int)
+    d["offset_term"] = d["log_segments"]
     return d
 
 
@@ -100,7 +110,7 @@ def main() -> None:
     import statsmodels.api as sm
 
     d = load()
-    log.info("corridor-years with exposure: %s", f"{len(d):,}")
+    log.info("corridor-years with dated treatment: %s", f"{len(d):,}")
     log.info("variance/mean of the outcome: %.2f",
              d["cyclist_injured"].var() / d["cyclist_injured"].mean())
     log.info("")
@@ -132,27 +142,25 @@ def main() -> None:
     report(log, "treated_now (within corridor)", c3, s3, int(m3._N))
     log.info("")
 
-    # --- (4) same, on the CEM-matched sample ------------------------------
+    # --- (4) same, on the CEM common support sample (unweighted) ------------------------------
     dm = d[d["in_common_support"].fillna(False)].copy()
-    log.info("=== (4) Poisson PML on the CEM-matched sample ===")
+    log.info("=== (4) Poisson PML on the CEM common support sample (unweighted) ===")
     m4 = pf.fepois(
         "cyclist_injured ~ treated_now | corridor_id + year",
         data=dm, offset="offset_term", vcov={"CRV1": "corridor_id"},
-        weights="cem_weight",
     )
     c4 = float(m4.coef().iloc[0])
     s4 = float(m4.se().iloc[0])
-    report(log, "treated_now (matched, within corridor)", c4, s4, int(m4._N))
+    report(log, "treated_now (common support, within corridor)", c4, s4, int(m4._N))
     log.info("")
 
     log.info("=== READING THE LADDER ===")
     log.info("  (1) pooled                     %+.1f%%", 100 * (np.exp(nb.params['treated_now']) - 1))
     log.info("  (3) + corridor & year FE       %+.1f%%", 100 * (np.exp(c3) - 1))
-    log.info("  (4) + CEM matching             %+.1f%%", 100 * (np.exp(c4) - 1))
+    log.info("  (4) common support subset             %+.1f%%", 100 * (np.exp(c4) - 1))
     log.info("")
-    log.info("  The movement from (1) to (3) is the size of the selection problem:")
-    log.info("  how much of the raw association is DOT choosing dangerous corridors")
-    log.info("  rather than lanes changing outcomes.")
+    log.info("  Specification differences combine conditioning and sample changes.")
+    log.info("  They do not independently identify why DOT selected a corridor.")
 
     out = ROOT / "analysis" / "output"
     out.mkdir(exist_ok=True)

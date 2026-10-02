@@ -1,0 +1,8 @@
+{
+  "segments": 20439,
+  "corridors": 2244,
+  "only_python": 0,
+  "only_postgis": 0,
+  "python_splits": 0,
+  "postgis_splits": 0
+}

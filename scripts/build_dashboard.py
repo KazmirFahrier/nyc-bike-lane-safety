@@ -10,6 +10,7 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -52,7 +53,8 @@ def main() -> None:
     tpl = (D / "template.html").read_text()
     data = (D / "data.json").read_text()
     assert "/*DATA*/" in tpl, "template lost its data placeholder"
-    html = tpl.replace("/*DATA*/", data)
+    html = tpl.replace("/*DATA*/", data).replace("/*CORRIDOR_COUNT*/",
+        f"{json.loads(data)['meta']['corridors']:,}")
 
     html = _to_ascii(html)
 
@@ -66,7 +68,8 @@ def main() -> None:
     # a figure the pipeline has since regenerated.
     assets = ROOT / "docs" / "assets"
     assets.mkdir(exist_ok=True)
-    for name in ("equity.png", "map_buildout.png", "raw_trends.png"):
+    for name in ("equity.png", "equity_timing.png", "event_study.png",
+                 "spec_ladder.png", "map_buildout.png", "raw_trends.png"):
         src = ROOT / "analysis" / "output" / name
         if src.exists():
             (assets / name).write_bytes(src.read_bytes())

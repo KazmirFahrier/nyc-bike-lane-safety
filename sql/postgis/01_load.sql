@@ -13,6 +13,7 @@ CREATE TABLE bike_segments (
     street               text,
     boro_code            text,
     first_protected_year integer,
+    treatment_history text,
     geom_wkt             text
 );
 

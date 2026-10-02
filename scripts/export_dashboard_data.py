@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from nycbike import config
+from nycbike.equity_summary import timing_records
 
 OUT_WEB = ROOT / "docs" / "dashboard"
 OUT_TAB = ROOT / "data" / "tableau"
@@ -93,25 +94,18 @@ def main() -> None:
             })
     equity = pd.DataFrame(eqrows)
 
-    sw = eq[eq["treatment_cohort"] == "switcher"].copy()
-    sw["income_q"] = pd.qcut(sw["income"], 5, labels=[1, 2, 3, 4, 5])
-    sw["poc_q"] = pd.qcut(sw["share_poc"], 5, labels=[1, 2, 3, 4, 5])
-    timing = []
-    for key, kind in (("income_q", "income"), ("poc_q", "poc")):
-        for q, v in sw.groupby(key, observed=True)["first_protected_year"].median().items():
-            timing.append({"kind": kind, "quintile": int(q), "median_year": int(v)})
+    timing = timing_records(eq)
 
     # --- headline estimates, read from the analysis outputs -------------
     # Never hardcoded: the dashboard must not be able to disagree with the
     # models it claims to display.
-    BASELINE = 0.0878  # treated corridors' own pre-treatment mean, from did.py
     did_s = pd.read_csv(ROOT / "analysis/output/did_summary.csv").set_index("spec")
     cm = pd.read_csv(ROOT / "analysis/output/count_models.csv").set_index("spec")
 
     def as_pct(row) -> tuple[float, float, float]:
-        return (100 * row["att"] / BASELINE,
-                100 * row["ci_lo"] / BASELINE,
-                100 * row["ci_hi"] / BASELINE)
+        return (100 * row["att"] / row["baseline_rate"],
+                100 * row["ci_lo"] / row["baseline_rate"],
+                100 * row["ci_hi"] / row["baseline_rate"])
 
     p1, l1, h1 = as_pct(did_s.loc["cs_did_base_last_pre_year"])
     p2_, l2, h2 = as_pct(did_s.loc["cs_did_base_early_window"])
@@ -128,7 +122,7 @@ def main() -> None:
          "method": "Callaway-Sant'Anna, base = four years before that",
          "pct": round(p2_, 1), "lo": round(l2, 1), "hi": round(h2, 1), "anchor": False},
         {"label": "Compared within each corridor, before vs after",
-         "method": "Poisson fixed effects, CEM-matched, corridor-clustered",
+         "method": "Poisson fixed effects, common support sample, unweighted, corridor-clustered",
          "pct": round(p3, 1), "lo": round(l3, 1), "hi": round(h3, 1), "anchor": False},
     ]
 
@@ -140,8 +134,9 @@ def main() -> None:
             "study_start": 2013, "study_end": 2024,
             "corridors": len(cor),
             "treated_corridors": int(cor["is_protected"].sum()),
-            "crashes": 57353, "segments": int(cor["n_segments"].sum()),
-            "ridership_growth_pct": 44.5,
+            "crashes": json.loads((config.DATA_RAW / "crashes_cyclist.receipt.json").read_text())["rows_landed"], "segments": int(cor["n_segments"].sum()),
+            "ridership_growth_pct": round(100 * (
+                yearly["ridership"].dropna().iloc[-1] / yearly["ridership"].dropna().iloc[0] - 1), 1),
         },
         "estimates": estimates,
         "yearly": yearly.replace({np.nan: None}).to_dict("records"),

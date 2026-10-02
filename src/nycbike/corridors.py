@@ -119,9 +119,12 @@ def build_corridors() -> gpd.GeoDataFrame:
 
     con = duckdb.connect(str(config.DUCKDB_PATH), read_only=True)
     treat = con.execute("""
-        select distinct segmentid, street, boro_code, treatment_cohort,
-               first_protected_year, is_offstreet_path
-        from main.int_segment_treatment
+        select segmentid, any_value(street) as street, any_value(boro_code) as boro_code,
+               any_value(treatment_cohort) as treatment_cohort,
+               any_value(first_protected_year) as first_protected_year,
+               bool_and(is_offstreet_path) as is_offstreet_path,
+               string_agg(is_treated::int::varchar, '' order by panel_year) as treatment_history
+        from main.int_segment_treatment group by segmentid
     """).df()
     con.close()
 
@@ -143,6 +146,7 @@ def build_corridors() -> gpd.GeoDataFrame:
         gdf["street"].fillna("(unnamed)")
         + "|" + gdf["boro_code"].fillna("?")
         + "|" + gdf["first_protected_year"].fillna(-1).astype(int).astype(str)
+        + "|" + gdf["treatment_history"]
     )
 
     corridor_ids = np.empty(len(gdf), dtype=object)

@@ -44,3 +44,7 @@ logs/*.log
 
 # macOS
 .DS_Store
+
+# Local reproduction reference files and test reports
+work/
+logs/*.xml
