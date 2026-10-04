@@ -1,232 +1,89 @@
-# Protected Bike Lanes and Cyclist Injuries in New York City
+# Protected bike lanes and cyclist injuries in New York City
 
-**Did NYC's protected bike lane build-out reduce cyclist injuries, once you account for
-the fact that more people started riding on exactly the streets that got the lanes?**
+An independent analysis of recorded cyclist injuries, bike infrastructure and neighborhood provision from 2013 through 2024. It combines Python, SQL, dbt, DuckDB, PostGIS, R and public NYC and Census data.
 
-A staggered difference-in-differences study of 4,357 on-street protected bike lane
-segments installed between 2013 and 2024, using NYPD crash records, DOT bike route
-geometry, DOT automated bicycle counters, and ACS demographics.
+[Interactive dashboard and policy brief](https://kazmirfahrier.github.io/nyc-bike-lane-safety/)
 
-[![CI](https://github.com/KazmirFahrier/nyc-bike-lane-safety/actions/workflows/ci.yml/badge.svg)](https://github.com/KazmirFahrier/nyc-bike-lane-safety/actions/workflows/ci.yml)
+Independent analysis by Kazmir Fahrier. Not affiliated with, commissioned by, or endorsed by NYC DOT or any government agency. Findings and errors are my own.
 
-**▶ [Interactive dashboard and policy brief](https://kazmirfahrier.github.io/nyc-bike-lane-safety/)**
+## Current results
 
-> Independent analysis by a private individual, written on my own initiative using public
-> data. Not affiliated with, commissioned by, endorsed by, or speaking for the New York City
-> Department of Transportation, the Vision Zero program, or any government agency or
-> organization. Findings and any errors are my own.
+<!-- RESULTS_START -->
+The corrected panel contains **2,244 corridors**, including **523** first treated during 2013 through 2024. The matched absorbing design includes **383 treated corridors**, with complete baseline windows and dated treatment histories.
 
-## The finding
+| Specification | Change relative to baseline | 95% interval |
+|---|---:|---:|
+| Staggered adoption, last preyear | -30.6% | -79.9% to +6.7% |
+| Staggered adoption, earlier four years | -4.2% | -30.4% to +20.6% |
+| Poisson FE, unweighted common support sample | +21.3% | +2.0% to +44.3% |
 
-**The question cannot be answered with this data, and the reason is the finding.**
+The staggered adoption intervals include zero. The common support Poisson interval is above zero, but neither design establishes a credible causal safety effect. These are injury count estimates, not risk per cyclist.
+<!-- RESULTS_END -->
 
-NYC DOT installs protected bike lanes where cyclists are already being hurt.
-Corridors that received one saw their cyclist-injury rate **rise 55% over the five
-years before installation** (0.076 → 0.119 injuries per segment-year) while matched
-comparison corridors stayed flat (0.090 → 0.092).
+The original sign reversal narrative has been withdrawn. This analysis does not establish why DOT selected a corridor, whether protected lanes cause harm, or whether they improve safety per cyclist. Local ridership is unobserved.
 
-That is well-targeted policy. It also breaks the standard evaluation method, because
-a problem that has just spiked tends to subside whether or not you intervene. Three
-defensible analytic choices give three answers that do not agree on direction:
+## October 2026 correction
 
-| Specification | Estimate | 95% CI |
-|---|---|---|
-| Callaway–Sant'Anna, base = last pre-year | **−17.7%** | −57% to +20% |
-| Callaway–Sant'Anna, base = earlier pre-window | **+8.0%** | −17% to +35% |
-| Poisson FE within corridor, CEM-matched | **+12.1%** | −4% to +31% |
-| *(naive two-way fixed effects, shown for contrast)* | *+21.2%* | — |
+[What changed, why it mattered and how it was verified](docs/corrections.md)
 
-None is statistically distinguishable from zero. The gap between row 1 and rows 2–3
-is not a fact about bike lanes — it is a fact about which pre-treatment year you
-anchor to, and treated corridors' injuries peak in exactly the year row 1 uses.
+The correction preserves annual lane removals, separates different treatment histories, repairs support and weighting as controls become treated, uses complete baseline windows, removes a redundant citywide exposure offset, aligns equity groupings and regenerates the full publication together.
 
-**This is not evidence that protected lanes fail.** It is evidence that the
-observational record cannot settle the question, and that any published figure which
-does not address the targeting problem deserves suspicion — including figures that
-flatter the program.
-
-## The question the data *can* answer
-
-Whether a lane *worked* needs a counterfactual. Whether a neighborhood *got* one does not —
-distribution is observed. And there the answer is unambiguous:
-
-| | Richest fifth of tracts | Middle fifth |
-|---|---|---|
-| Protected lane miles per 10,000 residents | **0.40** | **0.12** |
-| Tracts containing any protected lane | **47.7%** | **15.2%** |
-
-| | Poorest fifth | Richest fifth | | Most POC | Least POC |
-|---|---|---|---|---|---|
-| Median year the corridor got its lane | **2022** | **2019** | | **2022** | **2019** |
-
-Three years, on a program whose stated purpose is preventing deaths. The gap is a *gap, not
-a gradient* — the poorest fifth is not the worst served (0.17); the middle fifth is. That
-nuance is in the brief.
-
-📄 **[Read the eight-page policy brief](docs/brief/protected-bike-lanes-brief.pdf)** (PDF) ·
-[web version](docs/brief/brief_web.html) · [interactive dashboard](docs/dashboard/dashboard.html)
-
-![Where New York built its protected bike lanes](analysis/output/map_buildout.png)
-
-![Injuries on treated corridors rose 55% before the lane went in](analysis/output/raw_trends.png)
-
----
-
-## The question, stated precisely
-
-Between 2013 and 2024 the NYC Department of Transportation installed protected bike
-lanes on 4,357 street segments. Cyclist injuries citywide rose over the same period.
-Both facts are true and neither answers the policy question, because ridership rose
-too — and it rose *most* on the corridors that got lanes.
-
-So this study asks three things:
-
-1. **Effect.** On corridors that received a protected lane, did cyclist injuries fall
-   relative to matched comparison corridors that did not, in the years after install?
-2. **Exposure.** Does that answer survive controlling for ridership? A lane that
-   triples riding and doubles injuries has *halved* the risk per rider. Injury counts
-   alone cannot distinguish safety from popularity.
-3. **Equity.** Were the corridors that got lanes distributed evenly across
-   neighborhoods, and did the safety gains land evenly?
+The correction record compares old and current estimates and identifies remaining limits. [Current scope](docs/scope.md) describes the implemented design.
 
 ## Method
 
-Staggered-adoption difference-in-differences (Callaway–Sant'Anna group-time ATTs) on a
-corridor-by-year panel with cohort-specific coarsened exact matching, supplemented by
-corridor-and-year fixed-effect Poisson count models carrying a ridership-exposure offset.
+The primary analysis uses staggered adoption group and time comparisons on an absorbing treatment sample. Matching uses borough and injury counts in the three years before installation. Cohorts begin in 2018 to give both baseline specifications complete observations. Never treated and not yet treated controls are eligible; support and control weights are recalculated at each comparison year. Inference uses 1,000 corridor block bootstrap draws with a fixed seed and pointwise intervals.
 
-Poisson pseudo-maximum-likelihood rather than negative binomial for the fixed-effects
-specifications: it stays consistent for the conditional mean under the overdispersion
-present here (variance/mean 6.5) without the incidental-parameters problem that afflicts
-negative binomial with thousands of fixed effects. A pooled negative binomial is reported
-alongside them, but explicitly as a **cross-sectional association** — it measures where
-lanes are, not what they do — and never as a treatment effect.
+The count models use annual recorded treatment, exclude undated removals and report corridor and year fixed effects Poisson associations. The common support specification is an unweighted sample restriction, not a collapse of different cohort weights. A pooled negative binomial association and unweighted TWFE comparison are supplementary.
 
-**Identifying assumption, stated up front:** absent the lane, injury trends on treated
-corridors would have moved parallel to matched control corridors. This is an
-assumption, not a finding. The pre-treatment trend plot that tests it is published in
-the brief *whatever it shows* — including if it undermines the design.
+The citywide counter index is descriptive. It is absorbed by year effects and cannot adjust different ridership growth on treated streets. These models estimate recorded injury counts, not risk per rider.
 
-**Known threat to identification:** DOT does not install lanes at random. Lanes go
-where riding is already growing and where crashes are already a known problem, which
-biases in opposite directions. Matching on pre-period ridership, crash history, street
-class, and borough narrows this; it does not eliminate it. The brief says so.
+## Data and equity
 
-## Data
+Live pulls on October 1, 2026 reconciled:
 
-| Source | Dataset | Rows | Role |
-|---|---|---|---|
-| NYPD via NYC Open Data | Motor Vehicle Collisions – Crashes (`h9gi-nx95`) | 57,353 cyclist-involved, 2013–24 | Outcome |
-| NYPD via NYC Open Data | Motor Vehicle Collisions – Person (`f55k-p6yu`) | — | Injury severity |
-| NYC DOT | Bike Routes (`mzxg-pwib`) | 29,695 segments | Treatment + timing |
-| NYC DOT | Bicycle Counts (`uczf-rk3c`) | 6,208,848 readings, 2013 through 2024 | Exposure |
-| NYC DOT | Bicycle Counters (`smn3-rzf9`) | 41 counter sites | Exposure geography |
-| NYC DOT | Bicycle & Pedestrian Counts (`ct66-47at`) | 21.0M | Exposure |
-| Census Bureau | ACS 5-Year, tract level | — | Equity stratification |
+| Source | Study window quantity | Role |
+|---|---:|---|
+| NYPD Motor Vehicle Collisions | 57,353 cyclist injury or fatality crashes | Outcomes |
+| NYC DOT Bike Routes | 29,695 route records | Geometry and treatment |
+| NYC DOT Bicycle Counts | 6,208,848 readings; 159,183,214 passages | Descriptive counter index |
+| NYC DOT Bicycle Counters | 41 site records | Counter geography |
+| Census ACS 2018 through 2022 and TIGER | 2,327 NYC tract records | Neighborhood descriptions |
 
-All sources are public and free. Endpoints verified live 2026-08-24.
+Every source pull reconciles row counts or aggregate control totals. Source hashes and receipts are recorded in [the run manifest](analysis/output/run_manifest.json). Raw data are downloaded separately and are not committed.
 
-### Three data decisions that change the answer
+Provision quintiles use tracts with observed demographics. Timing quintiles use all corridors with observed demographics before restricting to treated corridors. Fractional medians are retained. Mileage describes facilities ever recorded as protected, including later removals; it does not measure the current network or the demographics of riders.
 
-**1. "Protected" means two different things in the DOT file.** 5,220 Current segments
-are on-street protected lanes; 3,215 are greenway and park paths, coded identically.
-These are not the same intervention — greenways have no adjacent motor traffic and a
-different rider population. Only on-street segments are treated. Off-street segments
-are excluded from the control pool too, since they are not comparable streets.
+## Reproduction
 
-**2. 403 "protected" segments carry install dates before 1990** — 1894, 1900, 1909 —
-inherited from the underlying street centerline, not from any bike facility. Anything
-installed before 2013 is classified always-treated and dropped from the DiD; it can be
-neither a clean control nor a clean switcher.
-
-**3. 439 protected segments are Retired.** A corridor that gained a lane and later lost
-it is not "treated" for the whole panel. Treatment history is reconstructed per segment
-per year from the `prevbikeid` version chain, not assumed from the current snapshot.
-
-### Two things not filtered, on purpose
-
-Ungeocoded crash records are landed, not dropped at ingest. The share of NYPD crash
-records missing coordinates changes over time, and silently dropping them would hide a
-data-quality problem that belongs in the brief. The loss is quantified in dbt instead.
-
-The study window stops at 2024-12-31. Recent months of crash data are revised upward as
-reports are filed, which manufactures a fake downward trend at the right edge of any
-time series that runs to today.
-
-## Reproducing
-
-Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), and Docker (for PostGIS).
+Requires Python 3.11 or later and uv. PDF rendering also requires Pandoc and WeasyPrint system libraries, such as Pango. Docker is required only for the independent PostGIS check; R with data.table, MASS and ggplot2 is required for the R check.
 
 ```bash
 git clone https://github.com/KazmirFahrier/nyc-bike-lane-safety.git
 cd nyc-bike-lane-safety
-uv venv && uv pip install -e ".[dev]"
-cp .env.example .env        # add a free Socrata app token; unauthenticated pulls are throttled
-source .venv/bin/activate
-
-python -m nycbike.ingest.crashes
-python -m nycbike.ingest.bike_routes
+make setup
+make all
+.venv/bin/pytest tests/ -q
+make postgis-up postgis-corridors
+Rscript analysis/did_validation.R
 ```
 
-Every pull writes a `*.receipt.json` beside its parquet recording the server's own row
-count, the rows landed, the exact filter, and the timestamp. A pull whose landed count
-does not match the server's count **raises** rather than writing a short file — silent
-under-collection is the most common way an analysis ends up quietly wrong.
+A free Socrata app token can be placed in `.env` to reduce throttling; it is optional. Census ingestion uses public summary files and needs no API key.
 
-Row counts drift upward as NYC backfills crash records. The receipts are what make the
-clean-room reproduction checkable: same filter, same expected count, or the upstream
-data changed and we can say by exactly how much.
+The main build includes both the staggered adoption estimator and count models. It also regenerates figures, the dashboard, the landing page, the web brief and PDF. The report builder refuses bootstrap smoke outputs with fewer than 1,000 draws. PDF and web content are generated from [one report template](docs/brief/brief_template.md).
 
-## Repository layout
+Run `bash scripts/clean_room.sh` for a fresh checkout reproduction. Upstream backfills can change results; receipts distinguish source changes from computational differences.
 
-```
-src/nycbike/          ingestion, config, Socrata client with reconciliation
-  ingest/             one module per source
-dbt/                  staging -> intermediate -> marts, 39 data tests
-sql/postgis/          corridor build, verified against the DuckDB one
-analysis/             DiD, count models, equity, figures, maps, R cross-validation
-scripts/              clean-room reproduction, brief and dashboard builders
-docs/                 data dictionary, GIS notes, policy brief, dashboard, site
-tests/                40 pytest unit tests (ingest, corridors, estimator, equity)
-.github/workflows/    CI: ruff, pytest, dbt parse
-```
+## Validation and limits
 
-## Verification
+CI checks lint, Python unit tests and dbt parsing. The local correction run additionally rebuilt the warehouse from live sources, ran all data tests and compared independent implementations. The correction note gives exact results and separates numerical verification from causal identification.
 
-Independent checks at every level, because a result nobody can reproduce is a claim, not a finding.
+The design still depends on parallel trends, reconstructed annual treatment dates, reported and geocoded injuries, incomplete counter coverage and ecological demographics. Installation year effects combine untreated and treated months. Event time averages can contain different cohorts. Poisson separation changes its sample. Passing tests does not validate these assumptions.
 
-| Check | Result |
-|---|---|
-| Estimator implemented twice — Python, and R written from the definition | agree to 1 part in 10¹⁵ across all 99 group-time cells |
-| Corridor construction built twice — DuckDB graph components, and PostGIS `ST_ClusterDBSCAN` | **identical partition** of all 20,439 segments |
-| dbt data tests | 39 passing, incl. end-to-end injury conservation |
-| Python unit tests | 40 passing — reconciliation, corridor topology, estimator arithmetic, weighting |
-| Every data pull | reconciled against the source's own `count(*)`; a short pull raises rather than writing |
-| **Clean-room reproduction** — fresh clone, live data re-pulled, `bash scripts/clean_room.sh` | **all five key figures match exactly** |
+## Repository
 
-The clean-room run earned its place: it caught three build failures invisible on the
-development machine — a circular Python/dbt dependency that only worked because the
-database already existed, a missing `dbt deps`, and a `staging+` selector that pulled in
-descendants when it needed ancestors. Each would have met the first person to clone the repo.
-
-## Roadmap
-
-- [x] Scaffold, config, reconciled Socrata client
-- [x] Crash ingestion (57,353 cyclist-involved records)
-- [x] Treatment ingestion + protected-lane definition
-- [x] Exposure ingestion + chained ridership index; generated data dictionary
-- [x] Spatial join with tie-breaking and contested-assignment flagging
-- [x] dbt staging → intermediate → marts, 39 tests
-- [x] Corridor aggregation, verified against PostGIS
-- [x] Cohort-specific coarsened exact matching
-- [x] Callaway–Sant'Anna DiD + event study + base-period sensitivity
-- [x] Poisson FE specification ladder; R cross-validation
-- [x] Eight-page policy brief
-- [x] Clean-room reproduction from a fresh clone
-- [x] Equity stratification by census tract (ACS via Census FTP summary files — no API key)
-- [x] Three maps, built by the pipeline so they regenerate with the data
-- [x] Interactive dashboard, self-contained; Tableau-ready extracts + build guide
+`src/nycbike/` contains ingestion and spatial construction. `dbt/` builds and tests the warehouse. `analysis/` estimates models and produces figures. `scripts/` builds the publications. `docs/` contains scope, corrections, the dashboard and brief. `tests/` exercises known computational failure modes.
 
 ## License
 
-Code MIT. Data belongs to the City of New York and the Census Bureau under their own terms.
+Code MIT. Data remain under the terms of the City of New York and Census Bureau.

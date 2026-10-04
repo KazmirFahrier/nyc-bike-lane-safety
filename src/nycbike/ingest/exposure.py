@@ -29,10 +29,10 @@ the bytes, and the control totals prove it is the same answer.
   injury rate computed from them.
 
 **The honest limit:** 41 counter sites. This cannot measure ridership on 4,357
-treated segments. It supports a citywide and borough ridership index, which is
-what the exposure offset uses. Segment-level exposure is modelled, not
-measured, and D9 reports how far the headline estimate moves without any
-exposure adjustment at all.
+treated segments. It supports the descriptive citywide counter index used here. It does not
+measure or model individual corridor exposure. Year fixed effects already
+absorb the citywide index, so it cannot adjust differential ridership growth
+between treated and comparison corridors.
 
 Usage:
     python -m nycbike.ingest.exposure

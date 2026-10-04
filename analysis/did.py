@@ -5,9 +5,9 @@ effects, implemented directly. Two-way fixed effects is *not* used as the
 headline, because with staggered adoption and effects that change over time,
 TWFE weights some 2x2 comparisons negatively -- already-treated corridors serve
 as controls for later-treated ones, and the estimate can carry the wrong sign
-even when every underlying effect is negative (Goodman-Bacon 2021). The naive
-TWFE number is computed anyway and reported beside the main one, so the size of
-that problem is visible rather than asserted.
+even when every underlying effect is negative (Goodman-Bacon 2021). The supplementary
+TWFE number uses an unweighted common support sample. Its differences from the
+main estimator combine weighting and sample changes, not just TWFE bias.
 
 For each cohort g and period t:
 
@@ -21,13 +21,10 @@ before the lane went in.
 segments; using raw counts would let long corridors dominate and would confound
 corridor length with effect size.
 
-**On exposure.** A DiD against contemporaneous controls differences out
-citywide ridership growth automatically -- both groups live through the same
-years. What it cannot difference out is *differential* ridership change: if a
-protected lane itself attracts riders, treated corridors gain exposure that
-controls do not, and the estimate understates the per-rider safety gain. With
-41 counters this study cannot measure that, and the brief says so rather than
-implying the exposure offset in the negative binomial fixes it.
+**On exposure.** Contemporaneous controls account for common time shocks
+under the identifying assumptions. They do not measure local ridership or
+remove differential exposure changes. The citywide counter index supplies no
+local denominator, so these injury count estimates are not risk per rider.
 
 **Inference** is a corridor-level block bootstrap. Injuries within a corridor
 are correlated across years; treating corridor-years as independent would
@@ -55,8 +52,7 @@ from nycbike.logging_setup import setup
 
 # 1,000 replications for published numbers. Override for a fast smoke run:
 #   NYCBIKE_N_BOOT=50 python analysis/did.py
-# The clean-room reproduction uses a low value to check that the pipeline runs,
-# not to reproduce the confidence intervals.
+# The fresh checkout reproduction uses all 1,000 draws and compares intervals.
 N_BOOT = int(os.environ.get("NYCBIKE_N_BOOT", "1000"))
 RNG_SEED = 20260824  # fixed so the numbers in the brief are reproducible
 EVENT_WINDOW = (-5, 5)
@@ -66,8 +62,8 @@ def load() -> tuple[pd.DataFrame, pd.DataFrame]:
     con = duckdb.connect(str(config.DUCKDB_PATH), read_only=True)
     panel = con.execute("""
         select corridor_id, panel_year, boro_code, n_segments,
-               treatment_cohort, first_protected_year,
-               cyclist_injured, cyclist_killed, crash_count,
+               treatment_cohort, first_protected_year, is_treated, has_undated_removal,
+               cyclist_injured, cyclist_killed, crash_count, log_segments, log_exposure, has_exposure,
                cyclist_injured::double / n_segments as injuries_per_segment
         from main.fct_corridor_year_panel
     """).df()
@@ -78,7 +74,21 @@ def load() -> tuple[pd.DataFrame, pd.DataFrame]:
         where in_common_support and cem_weight > 0
     """).df()
     con.close()
-    return panel, matched
+    return absorbing_sample(panel, matched)
+
+
+def absorbing_sample(panel: pd.DataFrame, matched: pd.DataFrame):
+    """Keep only corridors with dated, absorbing treatment histories.
+
+    The full descriptive panel retains exclusions and recorded annual status.
+    Standard staggered adoption cannot represent removal as continued treatment.
+    """
+    expected = panel["first_protected_year"].notna() & (
+        panel["panel_year"] >= panel["first_protected_year"])
+    bad = panel["has_undated_removal"].fillna(False) | (expected != panel["is_treated"])
+    excluded = panel.loc[bad, "corridor_id"].unique()
+    return (panel[~panel["corridor_id"].isin(excluded)].copy(),
+            matched[~matched["corridor_id"].isin(excluded)].copy())
 
 
 def att_gt(panel: pd.DataFrame, matched: pd.DataFrame,
@@ -87,12 +97,11 @@ def att_gt(panel: pd.DataFrame, matched: pd.DataFrame,
 
     `base_window` is the set of event times averaged to form the pre-treatment
     reference. The canonical choice is (-1,), the last year before treatment.
-    That choice is not innocent here: treated corridors' injury rate rises 55%
-    over the five years before the lane goes in, so e=-1 is close to a local
-    peak, and anchoring on it credits the lane with the mean reversion that
-    would have followed anyway. Passing (-5,-4,-3,-2) anchors on the earlier,
-    calmer stretch of the pre-period instead. The gap between the two answers
-    is the size of the selection problem.
+    The baseline choice requires sensitivity analysis: preperiod injuries vary
+    before installation. A preperiod peak can confound comparisons, but does
+    not prove why DOT chose a corridor. Passing (-5,-4,-3,-2) anchors on the earlier,
+    earlier preperiod instead. The gap mixes baseline and possible selection
+    sensitivity; it is not a direct measure of the selection mechanism.
     """
     y = panel.set_index(["corridor_id", "panel_year"])["injuries_per_segment"]
     rows = []
@@ -122,6 +131,20 @@ def att_gt(panel: pd.DataFrame, matched: pd.DataFrame,
             if ctrl.empty:
                 continue
 
+            # Future treated controls leave at t. Rebuild support and weights
+            # so remaining control strata still represent treated strata.
+            treated_cell = treated.copy()
+            strata = [c for c in ("boro_code", "injury_bin") if c in mg.columns]
+            if strata:
+                nt = treated_cell.groupby(strata).size().rename("nt")
+                nc = ctrl.groupby(strata).size().rename("nc")
+                support = pd.concat([nt, nc], axis=1).dropna().reset_index()
+                treated_cell = treated_cell.merge(support[strata], on=strata)
+                ctrl = ctrl.drop(columns="cem_weight").merge(support, on=strata)
+                ctrl["cem_weight"] = ctrl["nt"] / ctrl["nc"]
+                if treated_cell.empty or ctrl.empty:
+                    continue
+
             def wdiff(units: pd.DataFrame, t=t, base_years=base_years) -> float | None:
                 # t and base_years bound as defaults: the closure is only called
                 # within this iteration, but binding makes that explicit rather
@@ -141,12 +164,12 @@ def att_gt(panel: pd.DataFrame, matched: pd.DataFrame,
                     return None
                 return float(np.average((yt - yb)[ok], weights=w[ok]))
 
-            dt, dc = wdiff(treated), wdiff(ctrl)
+            dt, dc = wdiff(treated_cell), wdiff(ctrl)
             if dt is None or dc is None:
                 continue
             rows.append({
                 "cohort": g, "year": t, "event_time": t - g,
-                "att": dt - dc, "n_treated": len(treated), "n_control": len(ctrl),
+                "att": dt - dc, "n_treated": len(treated_cell), "n_control": len(ctrl),
             })
 
     return pd.DataFrame(rows)
@@ -205,60 +228,84 @@ def bootstrap(panel: pd.DataFrame, matched: pd.DataFrame, n_boot: int = N_BOOT):
     difference between them is not itself bootstrap noise.
     """
     rng = np.random.default_rng(RNG_SEED)
-    corridors = matched["corridor_id"].unique()
-    overall, events = [], []
-    overall_alt = []
-
-    for b in range(n_boot):
-        draw = rng.choice(corridors, size=len(corridors), replace=True)
-        # Re-label duplicates so a corridor drawn twice contributes twice.
-        rep = pd.DataFrame({"corridor_id": draw})
-        rep["boot_id"] = rep["corridor_id"] + "#" + rep.groupby("corridor_id").cumcount().astype(str)
-
-        m = matched.merge(rep, on="corridor_id")
-        p = panel.merge(rep, on="corridor_id")
-        m = m.drop(columns="corridor_id").rename(columns={"boot_id": "corridor_id"})
-        p = p.drop(columns="corridor_id").rename(columns={"boot_id": "corridor_id"})
-
-        gt = att_gt(p, m, BASE_SPECS["last_pre_year"])
-        if gt.empty:
-            continue
-        overall.append(aggregate_overall(gt))
-        ev = aggregate_event_study(gt).set_index("event_time")["att"]
-        events.append(ev)
-
-        gt_alt = att_gt(p, m, BASE_SPECS["early_pre_window"])
-        overall_alt.append(aggregate_overall(gt_alt) if not gt_alt.empty else np.nan)
-
-        if (b + 1) % 100 == 0:
-            print(f"    bootstrap {b + 1}/{n_boot}", flush=True)
-
-    return np.array(overall), pd.DataFrame(events), np.array(overall_alt)
+    # Canonical IDs keep fixed draws independent of database row order.
+    corridors = np.sort(matched["corridor_id"].unique())
+    positions = pd.Series(range(len(corridors)), index=corridors)
+    # Multinomial multiplicities are exactly a corridor block bootstrap.
+    # Compute all resamples together, avoiding thousands of repeated joins.
+    counts = rng.multinomial(len(corridors), np.full(len(corridors), 1 / len(corridors)),
+                             size=n_boot).astype(float)
+    y = panel.pivot(index="corridor_id", columns="panel_year", values="injuries_per_segment")
+    first = panel.drop_duplicates("corridor_id").set_index("corridor_id")["first_protected_year"]
+    results = {}
+    events = {}
+    for spec, offsets in BASE_SPECS.items():
+        numerator, denominator = np.zeros(n_boot), np.zeros(n_boot)
+        event_sums, event_weights = {}, {}
+        for g, mg in matched.groupby("cohort_year"):
+            bases = y.reindex(columns=[g + e for e in offsets]).mean(axis=1)
+            for t in sorted(y.columns):
+                if t in [g + e for e in offsets]:
+                    continue
+                d = mg.copy()
+                d = d[d["is_treated_here"] | d["corridor_id"].map(first).isna()
+                      | (d["corridor_id"].map(first) > max(t, g))]
+                d["delta"] = d["corridor_id"].map(y[t] - bases)
+                d = d.dropna(subset=["delta"])
+                strata = [c for c in ("boro_code", "injury_bin") if c in d.columns]
+                groups = d.groupby(strata, observed=True) if strata else [(None, d)]
+                change, weight = np.zeros(n_boot), np.zeros(n_boot)
+                for _, st in groups:
+                    tr, co = st[st["is_treated_here"]], st[~st["is_treated_here"]]
+                    if tr.empty or co.empty:
+                        continue
+                    tc = counts[:, positions.loc[tr["corridor_id"]].to_numpy()]
+                    cc = counts[:, positions.loc[co["corridor_id"]].to_numpy()]
+                    nt, nc = tc.sum(axis=1), cc.sum(axis=1)
+                    ok = (nt > 0) & (nc > 0)
+                    st_change = tc @ tr["delta"].to_numpy() - nt * np.divide(
+                        cc @ co["delta"].to_numpy(), nc, out=np.zeros(n_boot), where=nc > 0)
+                    change += np.where(ok, st_change, 0)
+                    weight += np.where(ok, nt, 0)
+                event = int(t - g)
+                if event >= 0:
+                    numerator += change
+                    denominator += weight
+                if EVENT_WINDOW[0] <= event <= EVENT_WINDOW[1]:
+                    event_sums[event] = event_sums.get(event, np.zeros(n_boot)) + change
+                    event_weights[event] = event_weights.get(event, np.zeros(n_boot)) + weight
+        results[spec] = np.divide(numerator, denominator,
+                                  out=np.full(n_boot, np.nan), where=denominator > 0)
+        if spec == "last_pre_year":
+            events = {e: np.divide(event_sums[e], event_weights[e],
+                                  out=np.full(n_boot, np.nan), where=event_weights[e] > 0)
+                      for e in sorted(event_sums)}
+    return results["last_pre_year"], pd.DataFrame(events), results["early_pre_window"]
 
 
 def twfe(panel: pd.DataFrame, matched: pd.DataFrame) -> float:
     """The naive two-way fixed effects estimate, for comparison only."""
-    import statsmodels.formula.api as smf
+    import pyfixest as pf
 
-    units = matched[["corridor_id", "cem_weight"]].drop_duplicates("corridor_id")
+    units = matched[["corridor_id"]].drop_duplicates()
     d = panel.merge(units, on="corridor_id")
-    d["treated_now"] = (
-        d["first_protected_year"].notna()
-        & (d["panel_year"] >= d["first_protected_year"])
-    ).astype(int)
-    d = d.dropna(subset=["injuries_per_segment"])
-    m = smf.wls(
-        "injuries_per_segment ~ treated_now + C(corridor_id) + C(panel_year)",
-        data=d, weights=d["cem_weight"],
-    ).fit()
-    return float(m.params["treated_now"])
+    d["treated_now"] = d["is_treated"].astype(int)
+    m = pf.feols("injuries_per_segment ~ treated_now | corridor_id + panel_year", data=d)
+    return float(m.coef().iloc[0])
 
 
 def main() -> None:
     log = setup("did")
     panel, matched = load()
+    base_rate = float(
+        panel.merge(matched[matched["is_treated_here"]][["corridor_id", "cohort_year"]]
+                    .drop_duplicates(), on="corridor_id")
+        .query("panel_year < cohort_year")["injuries_per_segment"].mean()
+    )
     log.info("corridors in matched design: %s", f"{matched['corridor_id'].nunique():,}")
 
+    panel.to_csv(config.DATA_INTERIM / "corridor_panel.csv", index=False)
+    matched.to_csv(config.DATA_INTERIM / "matched_corridors.csv", index=False)
     gt = att_gt(panel, matched)
     log.info("group-time ATTs estimated: %s", len(gt))
 
@@ -287,7 +334,7 @@ def main() -> None:
     pre_draws = pre_draws[~np.isnan(pre_draws)]
     pre_se = float(np.std(pre_draws, ddof=1))
     centered = pre_draws - pre_draws.mean()
-    joint = float(np.mean(np.abs(centered) >= abs(pre_mean)))
+    pre_mean_pvalue = float(np.mean(np.abs(centered) >= abs(pre_mean)))
     pre_ci = np.percentile(pre_draws, [2.5, 97.5])
 
     out = ROOT / "analysis" / "output"
@@ -307,14 +354,19 @@ def main() -> None:
     # them typed in by hand -- goes stale silently the first time the analysis
     # is re-run. Written here rather than beside the other CSVs above because
     # every value below has to exist first.
-    pd.DataFrame([
+    summary = pd.DataFrame([
         {"spec": "cs_did_base_last_pre_year", "att": overall, "ci_lo": lo, "ci_hi": hi, "se": se},
         {"spec": "cs_did_base_early_window", "att": overall_alt, "ci_lo": lo_alt,
          "ci_hi": hi_alt, "se": float(np.nanstd(boot_alt, ddof=1))},
         {"spec": "twfe_naive", "att": tw, "ci_lo": None, "ci_hi": None, "se": None},
         {"spec": "pretrend_mean", "att": pre_mean, "ci_lo": pre_ci[0],
          "ci_hi": pre_ci[1], "se": pre_se},
-    ]).to_csv(out / "did_summary.csv", index=False)
+    ])
+    summary["baseline_rate"] = base_rate
+    summary["n_boot"] = N_BOOT
+    summary["matched_treated_corridors"] = matched.loc[
+        matched["is_treated_here"], "corridor_id"].nunique()
+    summary.to_csv(out / "did_summary.csv", index=False)
 
     log.info("")
     log.info("=== EVENT STUDY (injuries per segment-year) ===")
@@ -334,20 +386,12 @@ def main() -> None:
              overall, lo, hi)
     log.info("  base = early pre-window (e=-5..-2): ATT %+.4f  [%+.4f, %+.4f]",
              overall_alt, lo_alt, hi_alt)
-    log.info("  Treated corridors' injury rate rises 55%% across the pre-period,")
-    log.info("  so e=-1 sits near a local peak.")
-    if np.sign(overall) != np.sign(overall_alt):
-        log.info("")
-        log.info("  *** THE SIGN FLIPS. *** The two base periods are both defensible")
-        log.info("  and they disagree about the direction of the effect. The headline")
-        log.info("  estimate is therefore not identifying the lane -- it is measuring")
-        log.info("  reversion from the injury spike that caused DOT to install it.")
-        log.info("  Do not report either number as the effect of a protected lane.")
+    log.info("  Baseline sensitivity does not by itself establish causal selection.")
     log.info("")
     log.info("=== PRE-TREND TEST ===")
     log.info("  mean pre-treatment ATT: %+.4f (SE %.4f, 95%% CI [%+.4f, %+.4f])",
              pre_mean, pre_se, pre_ci[0], pre_ci[1])
-    log.info("  bootstrap p-value for zero pre-trend: %.3f", joint)
+    log.info("  bootstrap p-value for zero pre-trend: %.3f", pre_mean_pvalue)
     # Failing to reject a flat pre-trend is NOT evidence that the pre-trend is
     # flat. With four pre-period estimates on a sparse count outcome this test
     # has very little power, and reporting a non-rejection as "parallel trends
@@ -366,11 +410,6 @@ def main() -> None:
 
     # Relative effect, which is what a policy reader needs. Baseline is the
     # treated corridors' own pre-treatment mean.
-    base_rate = float(
-        panel.merge(matched[matched["is_treated_here"]][["corridor_id", "cohort_year"]]
-                    .drop_duplicates(), on="corridor_id")
-        .query("panel_year < cohort_year")["injuries_per_segment"].mean()
-    )
     log.info("")
     log.info("=== IN RELATIVE TERMS ===")
     log.info("  treated corridors' pre-treatment mean: %.4f injuries/segment-year", base_rate)

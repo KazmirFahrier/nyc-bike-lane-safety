@@ -2,7 +2,7 @@
 
 ### A corrected analysis of public data from 2013 through 2024
 
-**Kazmir Fahrier** · Updated October 1, 2026
+**Kazmir Fahrier** · Updated $report_date
 
 Independent analysis of public data. Not affiliated with, commissioned by, or endorsed by NYC DOT or any government agency. Findings and errors are my own.
 
@@ -10,15 +10,11 @@ Independent analysis of public data. Not affiliated with, commissioned by, or en
 
 This analysis does not establish a credible causal effect of protected bike lanes on cyclist safety. It documents recorded injuries, treatment histories and neighborhood provision, then shows how injury count estimates depend on specification and identifying assumptions. Corridor ridership is not observed, so it cannot estimate changes in risk per rider.
 
-The corrected panel contains 2,244 corridors. Of these, 523 first received a recorded protected facility during the study window. The primary matched design contains 383 treated corridors with dated, absorbing treatment and a complete five year preperiod. Matching uses borough and injuries in the three years before installation.
+The corrected panel contains $corridors corridors. Of these, $switchers first received a recorded protected facility during the study window. The primary matched design contains $matched treated corridors with dated, absorbing treatment and a complete five year preperiod. Matching uses borough and injuries in the three years before installation.
 
 ## Corrected injury count estimates
 
-| Specification | Change relative to baseline | 95% interval |
-|---|---:|---:|
-| Staggered adoption, last preyear | -30.6% | -79.9% to +6.7% |
-| Staggered adoption, earlier four years | -4.2% | -30.4% to +20.6% |
-| Poisson FE, unweighted common support sample | +21.3% | +2.0% to +44.3% |
+$estimates
 
 The two staggered adoption intervals include zero. The common support Poisson interval is above zero. That positive association is not evidence that protected lanes cause harm: timing can depend on prior injuries, local ridership is unobserved, and the specifications use different samples and weights. Likewise, negative estimates do not establish a safety benefit.
 
@@ -40,13 +36,13 @@ The Poisson models use annual recorded treatment. The fixed effects remove fixed
 
 ## What the counter data measure
 
-The live counter pull reconciled 6,208,848 readings and 159,183,214 counted passages across the study window. Sensors are deduplicated and well observed sites are linked across adjacent years. The descriptive chained index grew 44.5% from 2014 to 2024 at those selected sites.
+The live counter pull reconciled 6,208,848 readings and 159,183,214 counted passages across the study window. Sensors are deduplicated and well observed sites are linked across adjacent years. The descriptive chained index grew $growth% from 2014 to 2024 at those selected sites.
 
 That is a proxy for activity at the counter network. Site coverage and seasonality can affect annual totals, and the index does not establish growth in all NYC cycling. It cannot measure differential ridership on treated streets. A citywide index is constant within each year and is absorbed by year fixed effects, so the corrected fixed effects models omit this redundant offset and retain 2013. No injury estimate here is adjusted for measured corridor exposure.
 
 ## Who received recorded protected facilities
 
-Protected mileage ever recorded per 10,000 residents is 0.40 in the richest tract quintile, 0.12 in the middle quintile and 0.17 in the poorest quintile. The middle group has less recorded provision than the poorest group; this is not a monotonic income gradient.
+Protected mileage ever recorded per 10,000 residents is $rich_miles in the richest tract quintile, $middle_miles in the middle quintile and $poor_miles in the poorest quintile. The middle group has less recorded provision than the poorest group; this is not a monotonic income gradient.
 
 ![Mileage ever recorded as protected per 10,000 residents, grouped by tract demographics. Tracts with suppressed income do not enter the income comparison.](../../analysis/output/equity.png)
 
@@ -54,18 +50,7 @@ Corridor geometry is intersected with census tracts. Demographic characteristics
 
 Timing quintiles are defined over all corridors with observed demographics, then restricted to corridors first treated within the study window. These are corridor groups, not census tract quintiles. The same definition is used by the brief, chart and dashboard. Half year medians are preserved if they arise.
 
-| Corridor demographic group | Median installation year | Corridors |
-|---|---:|---:|
-| Income, Q1 | 2022 | 99 |
-| Income, Q2 | 2019 | 79 |
-| Income, Q3 | 2021 | 84 |
-| Income, Q4 | 2020 | 106 |
-| Income, Q5 | 2019 | 112 |
-| POC share, Q1 | 2019 | 102 |
-| POC share, Q2 | 2020 | 105 |
-| POC share, Q3 | 2021 | 112 |
-| POC share, Q4 | 2020 | 74 |
-| POC share, Q5 | 2022 | 87 |
+$timing_table
 
 ![Median recorded installation year across the same corridor demographic groups used in the table.](../../analysis/output/equity_timing.png)
 
@@ -83,9 +68,9 @@ The resulting estimates replace the original published figures. See [the correct
 
 ## Data and validation
 
-The October 1, 2026 source pulls reconciled 57,353 cyclist injury or fatality crash records, 29,695 bike route records, and the counter totals reported above. Census summary files and TIGER geometry were downloaded again. The 2,244 corridor partition was rebuilt from 20,439 on street segments. Injury totals are conserved from segment to corridor panels.
+The October 1, 2026 source pulls reconciled 57,353 cyclist injury or fatality crash records, 29,695 bike route records, and the counter totals reported above. Census summary files and TIGER geometry were downloaded again. The $corridors corridor partition was rebuilt from 20,439 on street segments. Injury totals are conserved from segment to corridor panels.
 
-The corrected warehouse passes 32 dbt data tests. Unit tests cover removals, missing exposure, matching support and bootstrap arithmetic. Python and R implementations are compared for every group and time cell; PostGIS and Python constructions are compared across all segments. Numerical agreement validates computation, not causal assumptions. Exact results and source hashes are recorded with the correction.
+The corrected warehouse passes $data_tests dbt data tests. Unit tests cover removals, missing exposure, matching support and bootstrap arithmetic. Python and R implementations are compared for every group and time cell; PostGIS and Python constructions are compared across all segments. Numerical agreement validates computation, not causal assumptions. Exact results and source hashes are recorded with the correction.
 
 ## Reproducing and improving the design
 

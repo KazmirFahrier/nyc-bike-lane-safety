@@ -1,64 +1,31 @@
-# Scope note
+# Current analysis scope
 
-*Written D1. Amended as constraints surface — amendments are dated, not overwritten.*
+Updated October 1, 2026. This note describes the implementation used for the corrected analysis.
 
-## Question
+## Question and outcome
 
-Did NYC's 2013–2024 protected bike lane build-out reduce cyclist injuries on the
-corridors that received lanes, relative to matched untreated corridors, once ridership
-exposure is controlled — and were gains distributed evenly across neighborhoods?
+How do recorded cyclist injury counts change after protected bike lane installation, relative to matched comparison corridors? A separate descriptive analysis measures provision and installation timing across neighborhood demographic groups.
 
-## Unit of analysis
-
-Street segment × year. Segments come from the DOT bike route layer's `segmentid`, which
-is the NYC LION street centerline identifier, so treated and untreated corridors share a
-common spatial key.
+The primary outcome is injuries per street segment per year, aggregated to corridors. The study covers 2013 through 2024. It does not estimate injury risk per cyclist because local ridership is unobserved.
 
 ## Treatment
 
-A segment is treated in year *t* if an on-street protected facility
-(`ft_facilit` or `tf_facilit` = 'Protected' **and** `onoffst` = 'ON') was installed on or
-before *t* and had not been retired. 4,357 segments switch within the window.
-
-Excluded from both treatment and control:
-- Off-street protected paths (greenways) — different intervention, different exposure.
-- Always-treated segments installed before 2013 (1,009) — no observed pre-period.
-
-## Outcome
-
-Count of cyclist injuries per segment-year, from NYPD crash records geocoded to within
-100 ft of the segment centerline. Killed and injured modelled separately where counts
-permit; KSI (killed or severely injured) is the preferred severity cut if the Person
-file supports it.
-
-## Exposure
-
-Ridership proxy from DOT automated counters. **This is the weakest link in the design
-and is named as such in the brief:** 41 counter sites cannot directly measure ridership
-on 4,357 segments. The counters support a citywide and borough-level ridership index,
-not a segment-level one. Segment-level exposure is therefore modelled, not measured, and
-the robustness grid (D9) reports how much the headline estimate moves under alternative
-exposure assumptions — including no exposure adjustment at all.
+A corridor joins connected segments of the same street and borough with the same first installation year and complete annual treatment history. Known removals remain untreated in subsequent years. The standard staggered adoption design excludes corridors with nonabsorbing treatment or undated removals. Count models use recorded annual treatment and exclude undated removals. Descriptive outputs retain all corridors and mark whether a lane was ever recorded.
 
 ## Design
 
-Staggered-adoption difference-in-differences with a negative binomial outcome and a
-log-exposure offset. Because treatment timing is staggered, a two-way fixed effects
-estimator is biased when effects vary over time; the estimator used will be robust to
-this (Callaway–Sant'Anna or an equivalent), and the naive TWFE estimate is reported
-alongside it so the difference is visible.
+The staggered adoption analysis uses weighted group and time comparisons. Matching uses borough and injury counts in the three years before installation. It does not match street class or ridership. Cohorts start in 2018 so both the last preyear and earlier four year baseline have complete observations. Controls are never treated or not yet treated; common support and control weights are recalculated for each comparison year.
 
-## What this study cannot answer
+Poisson models include corridor and year fixed effects and corridor clustered standard errors. The common support specification restricts the sample and uses no regression weights. Pooled negative binomial results are descriptive associations. The TWFE comparison is an unweighted regression on the union of matched units and is not the same estimand as the group and time analysis.
 
-- Whether lanes caused ridership to rise (reverse causality with exposure).
-- Whether unreported injuries changed — NYPD records only crashes that were reported.
-- Anything about near-misses, comfort, or perceived safety.
-- Whether a *particular* corridor's lane worked. Estimates are averages.
+## Exposure and equity
 
-## Amendments
+The automated counter index is a citywide proxy. Year fixed effects absorb it. No specification corrects for different ridership changes on treated streets. Growth at the selected counter sites does not establish growth in all NYC cycling.
 
-- **2026-08-24 (D1):** Citi Bike System Data (`vsnr-94wk`) is not a tabular Socrata
-  dataset — it is a link record pointing at S3 trip files, and returns HTTP 403 to the
-  SoDA API. Citi Bike trip data, if used for exposure, must be pulled from
-  `s3.amazonaws.com/tripdata/` as monthly CSV archives instead. The project plan listed
-  it as a Socrata endpoint; that was wrong.
+Provision quintiles are defined over census tracts with observed demographics. Timing quintiles are defined over all corridors with observed demographics before restricting to treated corridors. They are distinct populations, clearly labeled, and fractional timing medians are preserved. Lane mileage describes facilities ever recorded as protected, not a verified current network. Tract demographics do not identify the riders using a corridor.
+
+## Interpretation
+
+This analysis does not establish a credible causal safety effect. Changes before installation are consistent with selection and other time varying factors; they do not prove why DOT selected a corridor. Event time averages can contain different cohorts. Null significance does not establish zero effect. Numerical agreement between implementations validates arithmetic, not causal assumptions.
+
+See corrections.md for changes, reasons, validation, and remaining limits.

@@ -72,12 +72,11 @@ def event_study() -> None:
     # are measured against e=-1, so a NEGATIVE pre-period point means the
     # treated corridors sat below their base-year level -- i.e. they were
     # rising into the year the lane was installed, not falling.
-    fig.text(0.13, 0.945, "No break at installation: after-estimates match the before-trend",
+    fig.text(0.13, 0.945, "Before and after estimates with their uncertainty",
              fontsize=13, color=INK, ha="left", va="top", weight="medium")
     fig.text(0.13, 0.885,
-             "Measured against the year before installation. A point below zero means injuries were lower\n"
-             "than in that base year, so the rising pre-period line is a corridor getting more dangerous\n"
-             "in the run-up to the lane -- which is why DOT installed one.",
+             "Recorded treated versus comparison injury differences, relative to the year before installation.\n"
+             "Negative preperiod estimates are below that reference. Cohort composition varies across event times.",
              fontsize=8.6, color="#555555", ha="left", va="top", linespacing=1.45)
 
     fig.savefig(OUT / "event_study.png", dpi=180)
@@ -85,31 +84,33 @@ def event_study() -> None:
 
 
 def raw_trends() -> None:
-    """The un-differenced series. Shows the selection directly."""
-    import duckdb
+    """Descriptive injury series; these do not identify the selection mechanism."""
     import numpy as np
+    from did import load
 
-    from nycbike import config
-
-    con = duckdb.connect(str(config.DUCKDB_PATH), read_only=True)
-    panel = con.execute("""select corridor_id, panel_year, n_segments,
-        cyclist_injured::double/n_segments as ips from main.fct_corridor_year_panel""").df()
-    m = con.execute("""select cohort_year, unit_id as corridor_id, is_treated_here, cem_weight
-        from main.int_matched_corridors where in_common_support and cem_weight>0""").df()
-    con.close()
-
-    d = m.merge(panel, on="corridor_id")
+    panel, m = load()
+    d = m.merge(panel.drop(columns="boro_code"), on="corridor_id")
     d["e"] = d["panel_year"] - d["cohort_year"]
     d = d[d["e"].between(-5, 5)]
+    d = d[d["is_treated_here"] | d["first_protected_year"].isna()
+          | (d["first_protected_year"] > np.maximum(d["panel_year"], d["cohort_year"]))]
+    d["ips"] = d["injuries_per_segment"]
     rows = []
     for e, g in d.groupby("e"):
-        t, c = g[g["is_treated_here"]], g[~g["is_treated_here"]]
-        rows.append({
-            "e": e,
-            "treated": np.average(t["ips"], weights=t["cem_weight"]) if len(t) else np.nan,
-            "control": np.average(c["ips"], weights=c["cem_weight"]) if len(c) else np.nan,
-        })
+        t, c = g[g["is_treated_here"]], g[~g["is_treated_here"]].copy()
+        keys = ["cohort_year", "boro_code", "injury_bin"]
+        nt = t.groupby(keys).size().rename("nt")
+        nc = c.groupby(keys).size().rename("nc")
+        support = pd.concat([nt, nc], axis=1).dropna().reset_index()
+        t = t.merge(support[keys], on=keys)
+        c = c.drop(columns="cem_weight").merge(support, on=keys)
+        c["cem_weight"] = c["nt"] / c["nc"]
+        rows.append({"e": e,
+            "treated": np.average(t["ips"], weights=t["cem_weight"]),
+            "control": np.average(c["ips"], weights=c["cem_weight"]),
+            "n_treated": len(t), "n_cohorts": t["cohort_year"].nunique()})
     r = pd.DataFrame(rows)
+    r.to_csv(OUT / "raw_trends.csv", index=False)
 
     fig, ax = plt.subplots(figsize=(8, 4.8))
     _style(ax)
@@ -122,7 +123,7 @@ def raw_trends() -> None:
                 textcoords="axes fraction", color=WARN, fontsize=9)
     ax.set_xlabel("Years since protected lane installed", fontsize=10)
     ax.set_ylabel("Cyclist injuries per segment-year", fontsize=10)
-    ax.set_title("Injuries on treated corridors rose 55% in the five years before the lane",
+    ax.set_title("Recorded injury trends around protected lane installation",
                  fontsize=12, color=INK, loc="left", pad=14)
     ax.legend(frameon=False, fontsize=9, loc="upper left")
     fig.tight_layout()
@@ -135,7 +136,7 @@ def spec_ladder() -> None:
     cm = pd.read_csv(OUT / "count_models.csv")
     labels = {"1_pooled_nb": "Pooled\n(year + borough only)",
               "3_poisson_fe": "+ corridor and\nyear fixed effects",
-              "4_poisson_fe_matched": "+ CEM matching"}
+              "4_poisson_fe_matched": "Common support\nsample"}
     cm["pct"] = 100 * (np.exp(cm["coef"]) - 1)
     cm["lo"] = 100 * (np.exp(cm["coef"] - 1.96 * cm["se"]) - 1)
     cm["hi"] = 100 * (np.exp(cm["coef"] + 1.96 * cm["se"]) - 1)
@@ -150,7 +151,7 @@ def spec_ladder() -> None:
     ax.set_yticklabels([labels.get(s, s) for s in cm["spec"]], fontsize=9)
     ax.invert_yaxis()
     ax.set_xlabel("Estimated change in cyclist injuries (%)", fontsize=10)
-    ax.set_title("What you condition on changes the answer",
+    ax.set_title("Estimates vary across samples and specifications",
                  fontsize=12, color=INK, loc="left", pad=14)
     fig.tight_layout()
     fig.savefig(OUT / "spec_ladder.png", dpi=180)
@@ -226,7 +227,7 @@ def equity() -> None:
         ax.barh(range(len(med)), med - 2013, left=2013, height=.55,
                 color=c, alpha=.85)
         for i, v in enumerate(med):
-            ax.text(v + .1, i, f"{int(v)}", va="center", fontsize=9, color=INK)
+            ax.text(v + .1, i, f"{v:g}", va="center", fontsize=9, color=INK)
         ax.set_yticks(range(len(med)))
         ax.set_yticklabels(ticks, fontsize=8.5)
         ax.invert_yaxis()
@@ -234,7 +235,7 @@ def equity() -> None:
         ax.set_title(title, fontsize=10, color=INK, loc="left", pad=8)
         ax.set_xlabel("Median year the corridor got its lane", fontsize=9)
 
-    fig2.suptitle("The poorest and the most-POC corridors were treated last",
+    fig2.suptitle("Recorded installation timing by corridor demographics",
                   fontsize=12.5, color=INK, x=0.055, ha="left", y=0.99)
     fig2.tight_layout(rect=[0, 0, 1, 0.90])
     fig2.savefig(OUT / "equity_timing.png", dpi=180)

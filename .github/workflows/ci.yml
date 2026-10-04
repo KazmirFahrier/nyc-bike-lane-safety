@@ -60,4 +60,5 @@ jobs:
             ['scripts/build_brief.py','scripts/build_brief_web.py', \
              'scripts/build_dashboard.py','scripts/export_dashboard_data.py', \
              'analysis/did.py','analysis/equity.py','analysis/maps.py', \
-             'analysis/figures.py','analysis/count_models.py']]"
+             'analysis/figures.py','analysis/count_models.py', \
+             'scripts/build_report.py','scripts/validate_publication.py','scripts/record_run.py']]"

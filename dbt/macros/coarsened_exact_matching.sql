@@ -13,6 +13,12 @@
 
 with panel as (
     select * from {{ panel_relation }}
+    where {{ unit_col }} not in (
+        select {{ unit_col }} from {{ panel_relation }}
+        where has_undated_removal
+           or (first_protected_year is not null
+               and panel_year >= first_protected_year and not is_treated)
+    )
 ),
 
 cohorts as (

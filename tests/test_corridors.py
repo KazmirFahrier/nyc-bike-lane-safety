@@ -93,3 +93,15 @@ def test_unparseable_geometry_returns_none_rather_than_raising(bad):
     """A handful of bad geometries must not abort a 29,695-row ingest; they are
     counted and logged instead."""
     assert _to_geometry(bad) is None
+
+
+def test_corridor_identity_is_stable_when_segment_rows_are_reordered():
+    lines = _gs([LineString([(0, 0), (10, 0)]),
+                 LineString([(10, 0), (20, 0)]),
+                 LineString([(100, 0), (110, 0)])])
+    ids = np.array(['s30', 's20', 's10'])
+    expected = components_within_tolerance(lines, unit_ids=ids)
+    perm = np.array([2, 0, 1])
+    actual = components_within_tolerance(lines.iloc[perm], unit_ids=ids[perm])
+    assert dict(zip(ids, expected, strict=True)) == dict(zip(ids[perm], actual, strict=True))
+    assert expected.tolist() == [1, 1, 0]

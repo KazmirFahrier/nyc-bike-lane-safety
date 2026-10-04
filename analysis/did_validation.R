@@ -10,12 +10,7 @@
 #    Python implementation is not carrying a silent indexing bug, which is the
 #    most common way a hand-rolled Callaway-Sant'Anna goes wrong.
 #
-# 2. FIT THE NEGATIVE BINOMIAL. MASS::glm.nb estimates the dispersion
-#    parameter by maximum likelihood rather than taking it as given, which is
-#    what the corridor panel needs: variance/mean is 6.5, far outside Poisson.
-#    The exposure offset enters as log(segments) + log(citywide ridership), so
-#    the coefficient on treatment reads as a change in injuries per segment per
-#    unit of ridership rather than a change in raw counts.
+# This validates estimator arithmetic. It does not validate causal identification.
 #
 # Usage:  Rscript analysis/did_validation.R
 
@@ -69,13 +64,20 @@ for (g in sort(unique(matched$cohort_year))) {
     ctrl <- ctrl0[is.na(first_protected_year) | first_protected_year > max(t, g)]
     if (nrow(ctrl) == 0L) next
 
-    dt_ <- wmean_diff(treated)
+    keys <- c("boro_code", "injury_bin")
+    nt <- treated[, .(nt=.N), by=keys]
+    nc <- ctrl[, .(nc=.N), by=keys]
+    support <- merge(nt, nc, by=keys)
+    treated_cell <- merge(treated, support[, ..keys], by=keys)
+    ctrl <- merge(ctrl, support, by=keys)
+    ctrl[, cem_weight := nt / nc]
+    dt_ <- wmean_diff(treated_cell)
     dc_ <- wmean_diff(ctrl)
     if (is.na(dt_) || is.na(dc_)) next
 
     att_rows[[length(att_rows) + 1L]] <- data.table(
       cohort = g, year = t, event_time = t - g,
-      att = dt_ - dc_, n_treated = nrow(treated)
+      att = dt_ - dc_, n_treated = nrow(treated_cell)
     )
   }
 }
@@ -87,6 +89,8 @@ if (file.exists(py_path)) {
   py <- fread(py_path)
   cmp <- merge(att, py[, .(cohort, year, att_py = att)], by = c("cohort", "year"))
   cmp[, delta := abs(att - att_py)]
+  fwrite(cmp, file.path(root, "analysis/output/r_validation.csv"))
+  stopifnot(nrow(cmp) == nrow(att), nrow(cmp) == nrow(py), max(cmp$delta) < 1e-9)
   cat("\n=== CROSS-IMPLEMENTATION CHECK (R vs Python) ===\n")
   cat(sprintf("  group-time ATTs compared : %d\n", nrow(cmp)))
   cat(sprintf("  max absolute difference  : %.3e\n", max(cmp$delta)))
@@ -117,43 +121,4 @@ dir.create(file.path(root, "analysis/output"), showWarnings = FALSE)
 ggsave(file.path(root, "analysis/output/event_study_R.png"), p,
        width = 7, height = 4.5, dpi = 150)
 
-# ---- 2. negative binomial with exposure offset -----------------------------
-units <- unique(matched[, .(corridor_id, cem_weight)], by = "corridor_id")
-d <- merge(panel, units, by = "corridor_id")
-d[, treated_now := as.integer(!is.na(first_protected_year) &
-                              panel_year >= first_protected_year)]
-d <- d[has_exposure == TRUE & n_segments > 0]
-d[, `:=`(offset_term = log_segments + log_exposure,
-         yr = factor(panel_year), boro = factor(boro_code))]
-
-# NOTE ON WHAT THIS MODEL IS AND IS NOT.
-# This fits the CEM-matched, weighted sample with year and borough effects but
-# *no corridor fixed effects*. It therefore compares corridors that have lanes
-# against corridors that do not, and DOT does not pick corridors at random --
-# it installs where cyclists are already being hurt. The coefficient is a
-# cross-sectional association and must not be read as the effect of a lane.
-# The within-corridor estimates, which difference that selection out, are in
-# analysis/count_models.py (Poisson PML with corridor + year fixed effects and
-# corridor-clustered standard errors). glm.nb is used here because it estimates
-# the dispersion by maximum likelihood, which is the right check on whether the
-# overdispersion is as severe as the raw variance/mean suggests.
-cat("\n=== NEGATIVE BINOMIAL (MASS::glm.nb) -- ASSOCIATION, NOT EFFECT ===\n")
-cat(sprintf("  sample: CEM-matched corridors, weighted; no corridor fixed effects\n"))
-cat(sprintf("  corridor-years: %d\n", nrow(d)))
-fit <- tryCatch(
-  glm.nb(cyclist_injured ~ treated_now + yr + boro + offset(offset_term),
-         data = d, weights = cem_weight),
-  error = function(e) { cat("  glm.nb failed:", conditionMessage(e), "\n"); NULL }
-)
-if (!is.null(fit)) {
-  s <- summary(fit)
-  co <- s$coefficients["treated_now", ]
-  cat(sprintf("  theta (dispersion)  : %.3f  (Poisson would be Inf)\n", fit$theta))
-  cat(sprintf("  treated_now coef    : %+.4f  (SE %.4f, p = %.3f)\n",
-              co[1], co[2], co[4]))
-  cat(sprintf("  incidence rate ratio: %.3f  [%.3f, %.3f]\n",
-              exp(co[1]), exp(co[1] - 1.96 * co[2]), exp(co[1] + 1.96 * co[2])))
-  cat(sprintf("  => %+.1f%% change in cyclist injuries per segment, per unit ridership\n",
-              100 * (exp(co[1]) - 1)))
-}
 cat("\nwrote analysis/output/event_study_R.png\n")
